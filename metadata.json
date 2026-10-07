@@ -1,0 +1,6 @@
+{
+  "name": "eFootball Tournament Arena",
+  "description": "Full-stack eFootball Tournament Management Progressive Web App featuring live fixtures, screenshot result submission, automated leaderboard, admin verification desk, and Telegram bot notification integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

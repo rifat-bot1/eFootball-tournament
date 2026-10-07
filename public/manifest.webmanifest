@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "eFootball Tournament Arena",
+  "short_name": "eFootballCup",
+  "description": "eFootball Tournament Management PWA with live fixtures, result screenshot submission, automated leaderboards, and Telegram notifications.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#080c14",
+  "theme_color": "#080c14",
+  "categories": ["sports", "games", "entertainment"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

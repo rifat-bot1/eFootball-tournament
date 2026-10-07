@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>eFootball Tournament Arena</title>
+    <meta name="description" content="Full-stack eFootball Tournament Management Progressive Web App featuring live fixtures, screenshot result submission, automated leaderboard, admin verification desk, and Telegram bot notification integration." />
+    <meta property="og:title" content="eFootball Tournament Arena" />
+    <meta property="og:description" content="Full-stack eFootball Tournament Management Progressive Web App featuring live fixtures, screenshot result submission, automated leaderboard, admin verification desk, and Telegram bot notification integration." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#080c14" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="eFootballCup" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+  </head>
+  <body class="bg-[#080c14] text-slate-100 antialiased selection:bg-[#00ff87]/30 selection:text-[#00ff87]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Register PWA Service Worker
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(
+            (registration) => {
+              console.log('eFootball Arena PWA ServiceWorker registered with scope:', registration.scope);
+            },
+            (err) => {
+              console.log('ServiceWorker registration failed:', err);
+            }
+          );
+        });
+      }
+    </script>
+  </body>
+</html>
+

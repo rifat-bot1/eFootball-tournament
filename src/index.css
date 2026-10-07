@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .neon-border-green {
+    box-shadow: 0 0 15px rgba(0, 255, 135, 0.35), inset 0 0 15px rgba(0, 255, 135, 0.1);
+  }
+  .neon-border-blue {
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.35), inset 0 0 15px rgba(0, 229, 255, 0.1);
+  }
+  .neon-text-green {
+    text-shadow: 0 0 10px rgba(0, 255, 135, 0.6);
+  }
+  .neon-text-blue {
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+  }
+  .pitch-grid {
+    background-image: 
+      linear-gradient(to right, rgba(0, 255, 135, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 255, 135, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .glass-card {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-card-hover {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card-hover:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 255, 135, 0.3);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 255, 135, 0.15);
+  }
+}
+
+/* Custom scrollbar for mobile gaming feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #080c14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff87;
+}
+
