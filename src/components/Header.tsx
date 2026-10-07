@@ -5,25 +5,23 @@ import {
   Upload, 
   Table, 
   ShieldCheck, 
-  Send, 
   Copy, 
   Check, 
   User, 
   Flame, 
-  Settings, 
   Gamepad2,
-  RefreshCw
+  RefreshCw,
+  Send,
+  ExternalLink
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
 import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
-  activeTab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin' | 'telegram';
-  setActiveTab: (tab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin' | 'telegram') => void;
+  activeTab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin';
+  setActiveTab: (tab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin') => void;
   currentUser: UserProfile;
   onOpenAuth: () => void;
-  onOpenFirebaseConfig: () => void;
-  onOpenTelegramScript: () => void;
   pendingReviewsCount: number;
   onResetData: () => void;
 }
@@ -33,8 +31,6 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   currentUser,
   onOpenAuth,
-  onOpenFirebaseConfig,
-  onOpenTelegramScript,
   pendingReviewsCount,
   onResetData
 }) => {
@@ -47,12 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
     setTimeout(() => setCopiedId(false), 2000);
   };
 
-  const navItems: Array<{
-    id: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin' | 'telegram';
-    label: string;
-    icon: any;
-    badge?: number;
-  }> = [
+  const navItems = [
     { id: 'dashboard', label: 'Home', icon: Flame },
     { id: 'fixtures', label: 'Fixtures', icon: Calendar },
     { id: 'submit', label: 'Submit Result', icon: Upload },
@@ -63,7 +54,13 @@ export const Header: React.FC<HeaderProps> = ({
       icon: ShieldCheck,
       badge: pendingReviewsCount > 0 ? pendingReviewsCount : undefined 
     },
-    { id: 'telegram', label: 'Telegram Bot', icon: Send }
+    {
+      id: 'telegram',
+      label: 'Telegram Channel',
+      icon: Send,
+      isExternal: true,
+      url: 'https://t.me/eFootballTournamentBD'
+    }
   ];
 
   return (
@@ -94,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-mono tracking-tight hidden sm:block">
-              PWA Tournament & Result Desk
+              PWA Tournament &amp; Result Desk
             </p>
           </div>
         </div>
@@ -107,25 +104,17 @@ export const Header: React.FC<HeaderProps> = ({
             <PWAInstallButton />
           </div>
 
-          {/* Quick Telegram Bot Launcher */}
-          <button
-            onClick={onOpenTelegramScript}
-            className="flex items-center gap-1.5 rounded-lg border border-sky-500/30 bg-sky-950/30 px-2.5 py-1.5 text-xs font-semibold text-sky-400 hover:bg-sky-500/10 hover:border-sky-400 transition-colors"
-            title="Configure Telegram Bot & PHP Script"
+          {/* Direct Telegram Channel Link (Opens https://t.me/eFootballTournamentBD directly) */}
+          <a
+            href="https://t.me/eFootballTournamentBD"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/40 px-2.5 py-1.5 text-xs font-bold text-sky-400 hover:bg-sky-500/20 hover:border-sky-400 hover:text-white transition-all shadow-sm"
+            title="Join Official Telegram Channel (@eFootballTournamentBD)"
           >
-            <Send className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Telegram Bot</span>
-          </button>
-
-          {/* Firebase Settings */}
-          <button
-            onClick={onOpenFirebaseConfig}
-            className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/80 p-1.5 sm:px-2.5 sm:py-1.5 text-xs text-slate-300 hover:text-amber-400 hover:border-amber-400/40 transition-colors"
-            title="Configure Firebase Keys & Storage"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="hidden lg:inline">Firebase</span>
-          </button>
+            <Send className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden sm:inline">Telegram Channel</span>
+          </a>
 
           {/* User Profile Capsule */}
           <div 
@@ -174,10 +163,27 @@ export const Header: React.FC<HeaderProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
+
+            if (item.isExternal) {
+              return (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold text-sky-400 hover:bg-sky-500/10 hover:text-white transition-all border border-transparent hover:border-sky-500/30"
+                >
+                  <Icon className="w-3.5 h-3.5 text-sky-400" />
+                  <span>{item.label}</span>
+                  <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                </a>
+              );
+            }
+
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => setActiveTab(item.id as any)}
                 className={`relative flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   isActive
                     ? 'bg-gradient-to-r from-[#00ff87]/20 to-[#00e5ff]/10 text-[#00ff87] border border-[#00ff87]/40 shadow-sm'

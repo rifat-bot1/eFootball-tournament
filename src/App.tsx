@@ -29,14 +29,12 @@ import { AdminPanel } from './components/AdminPanel';
 import { ResultSubmissionModal } from './components/ResultSubmissionModal';
 import { AuthModal } from './components/AuthModal';
 import { CreateTournamentModal } from './components/CreateTournamentModal';
-import { FirebaseConfigModal } from './components/FirebaseConfigModal';
-import { TelegramPhpModal } from './components/TelegramPhpModal';
 import { ScreenshotInspectModal } from './components/ScreenshotInspectModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 
 export default function App() {
   // Navigation
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin' | 'telegram'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin'>('dashboard');
 
   // Core Data States
   const [currentUser, setCurrentUserState] = useState<UserProfile>(getCurrentUser());
@@ -50,8 +48,6 @@ export default function App() {
   const [selectedFixtureForSubmit, setSelectedFixtureForSubmit] = useState<MatchFixture | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCreateTourModalOpen, setIsCreateTourModalOpen] = useState(false);
-  const [isFirebaseConfigModalOpen, setIsFirebaseConfigModalOpen] = useState(false);
-  const [isTelegramScriptModalOpen, setIsTelegramScriptModalOpen] = useState(false);
   const [inspectScreenshot, setInspectScreenshot] = useState<{ open: boolean; url: string; title: string }>({
     open: false,
     url: '',
@@ -150,16 +146,12 @@ export default function App() {
         setActiveTab={(tab) => {
           if (tab === 'submit') {
             handleOpenSubmit();
-          } else if (tab === 'telegram') {
-            setIsTelegramScriptModalOpen(true);
           } else {
             setActiveTab(tab);
           }
         }}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthModalOpen(true)}
-        onOpenFirebaseConfig={() => setIsFirebaseConfigModalOpen(true)}
-        onOpenTelegramScript={() => setIsTelegramScriptModalOpen(true)}
         pendingReviewsCount={pendingReviewsCount}
         onResetData={handleResetData}
       />
@@ -248,18 +240,6 @@ export default function App() {
         isOpen={isCreateTourModalOpen}
         onClose={() => setIsCreateTourModalOpen(false)}
         onCreateTournament={handleCreateTournament}
-      />
-
-      {/* Firebase Config Modal */}
-      <FirebaseConfigModal
-        isOpen={isFirebaseConfigModalOpen}
-        onClose={() => setIsFirebaseConfigModalOpen(false)}
-      />
-
-      {/* Telegram Bot & PHP Script Modal */}
-      <TelegramPhpModal
-        isOpen={isTelegramScriptModalOpen}
-        onClose={() => setIsTelegramScriptModalOpen(false)}
       />
 
       {/* Screenshot Full Screen Inspector Modal */}

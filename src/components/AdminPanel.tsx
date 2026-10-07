@@ -6,14 +6,15 @@ import {
   Eye, 
   Plus, 
   Shuffle, 
-  Send, 
   Clock, 
   AlertTriangle, 
   UserCheck, 
-  Gamepad2,
-  FileCheck,
-  ExternalLink,
-  ChevronRight
+  Gamepad2, 
+  FileCheck, 
+  ExternalLink, 
+  ChevronRight,
+  Flame,
+  Send
 } from 'lucide-react';
 import { MatchFixture, Tournament, UserProfile } from '../types/tournament';
 import confetti from 'canvas-confetti';
@@ -126,7 +127,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Telegram Channel Direct Link */}
+          <a
+            href="https://t.me/eFootballTournamentBD"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-950/40 px-3.5 py-2 text-xs font-bold text-sky-400 hover:bg-sky-500/20 hover:border-sky-400 hover:text-white transition"
+            title="Open Telegram Channel (@eFootballTournamentBD)"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Telegram Channel</span>
+          </a>
+
           <button
             onClick={onOpenCreateTournament}
             className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-4 py-2 text-xs font-black text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
@@ -139,17 +152,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Telegram Notification Banner if recently dispatched */}
       {recentTelegramNotification && (
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-sky-950/40 border border-sky-500/40 p-4 text-sky-200 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-sky-950/40 border border-sky-500/40 p-4 text-sky-200 text-xs">
           <div className="flex items-center gap-2">
-            <Send className="w-4 h-4 text-sky-400" />
-            <span><strong>Telegram Notification Dispatched:</strong> {recentTelegramNotification.text}</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <span><strong>Telegram Broadcast:</strong> {recentTelegramNotification.text}</span>
           </div>
-          <button
-            onClick={() => setRecentTelegramNotification(null)}
-            className="text-sky-400 hover:text-white"
-          >
-            Dismiss
-          </button>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://t.me/eFootballTournamentBD"
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-[#00ff87] hover:underline flex items-center gap-1"
+            >
+              <span>View Channel</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <button
+              onClick={() => setRecentTelegramNotification(null)}
+              className="text-sky-400 hover:text-white"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 

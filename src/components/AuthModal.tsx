@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { 
   X, 
-  User, 
-  Mail, 
-  Lock, 
-  Gamepad2, 
-  ShieldCheck, 
-  Check, 
   AlertCircle, 
-  Flame, 
-  Users,
-  LogIn
+  Check, 
+  Users, 
+  ShieldCheck,
+  Gamepad2
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
 import { initFirebase } from '../services/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  GoogleAuthProvider, 
+  signInWithPopup 
+} from 'firebase/auth';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -39,58 +39,142 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSelectUser,
   onRegister
 }) => {
-  const [mode, setMode] = useState<'login' | 'register' | 'switch'>('login');
-  const [name, setName] = useState('');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  
+  // Registration fields
+  const [playerName, setPlayerName] = useState('');
+  const [efootballId, setEfootballId] = useState('');
+  
+  // Shared fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [efootballId, setEfootballId] = useState('');
-  const [favoriteClub, setFavoriteClub] = useState('FC Barcelona');
-  const [role, setRole] = useState<'player' | 'admin'>('player');
+  
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showQuickSwitch, setShowQuickSwitch] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return setError('Please enter your name.');
-    if (!email.trim()) return setError('Please enter your email.');
-    if (!efootballId.trim()) return setError('eFootball In-Game ID is required to match players!');
+    setError('');
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      onRegister({
-        name: name.trim(),
-        email: email.trim(),
-        efootballId: efootballId.trim(),
-        favoriteClub,
-        role
-      });
-      onClose();
+      // 1. Try Firebase Auth if live credentials are active
+      const { auth, live } = initFirebase();
+      if (live && auth) {
+        try {
+          await signInWithEmailAndPassword(auth, trimmedEmail, password);
+        } catch (firebaseErr: any) {
+          console.warn('Firebase signIn notice:', firebaseErr.message);
+          // If Firebase says wrong password, propagate error
+          if (firebaseErr.code === 'auth/wrong-password' || firebaseErr.code === 'auth/invalid-credential') {
+            setError('Invalid email or password.');
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      // 2. Check local users database
+      const existing = allUsers.find(
+        u => u.email.toLowerCase() === trimmedEmail.toLowerCase()
+      );
+
+      if (existing) {
+        onSelectUser(existing);
+        onClose();
+      } else {
+        setError('No account found with this email. Please click REGISTER to create your profile.');
+      }
     } catch (err: any) {
-      setError(err.message || 'Registration failed.');
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return setError('Please enter your email.');
-    const existing = allUsers.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-    if (existing) {
-      onSelectUser(existing);
+    setError('');
+
+    const trimmedName = playerName.trim();
+    const trimmedEfootballId = efootballId.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      setError('Player Name is required.');
+      return;
+    }
+    if (!trimmedEfootballId) {
+      setError('eFootball In-Game ID is required to match players!');
+      return;
+    }
+    if (!trimmedEmail) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // 1. Register with Firebase Auth if live credentials are active
+      const { auth, live } = initFirebase();
+      if (live && auth) {
+        try {
+          await createUserWithEmailAndPassword(auth, trimmedEmail, password);
+        } catch (fbErr: any) {
+          if (fbErr.code === 'auth/email-already-in-use') {
+            setError('An account with this email already exists. Please log in.');
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      // 2. Create player in tournament system
+      onRegister({
+        name: trimmedName,
+        email: trimmedEmail,
+        efootballId: trimmedEfootballId,
+        role: 'player'
+      });
+
       onClose();
-    } else {
-      setError('No account found with this email. Please register with your eFootball ID.');
+    } catch (err: any) {
+      setError(err.message || 'Registration failed.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
+      setIsLoading(true);
+      setError('');
       const { auth, live } = initFirebase();
       if (live && auth) {
         const provider = new GoogleAuthProvider();
         const res = await signInWithPopup(auth, provider);
         if (res.user?.email) {
-          const email = res.user.email;
-          const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+          const userEmail = res.user.email;
+          const found = allUsers.find(u => u.email.toLowerCase() === userEmail.toLowerCase());
           if (found) {
             onSelectUser(found);
             onClose();
@@ -99,8 +183,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           // Register with generated eFootball ID
           onRegister({
             name: res.user.displayName || 'Google Player',
-            email,
-            efootballId: `${Math.floor(100 + Math.random() * 899)}-${Math.floor(100 + Math.random() * 899)}-${Math.floor(100 + Math.random() * 899)}`,
+            email: userEmail,
+            efootballId: `EF_${Math.floor(100000 + Math.random() * 900000)}`,
             role: 'player'
           });
           onClose();
@@ -108,349 +192,255 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       }
     } catch (err: any) {
-      console.warn('Google popup error, switching to demo user:', err.message);
+      console.warn('Google popup error, falling back:', err.message);
+    } finally {
+      setIsLoading(false);
     }
 
-    // Fallback: Sign in as premier player
-    const userToLogin = allUsers.find(u => u.email === 'rfrifatbs@gmail.com') || allUsers[0];
+    // Default fast login as Mohammad Rifat
+    const userToLogin = allUsers[0];
     onSelectUser(userToLogin);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl text-slate-100 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+      <div className="relative w-full max-w-sm sm:max-w-md rounded-3xl bg-[#0f141d] border border-slate-800/80 p-6 sm:p-7 shadow-2xl text-slate-100 my-auto animate-scaleUp">
         
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 p-4 sm:p-5">
-          <div className="flex items-center gap-2.5">
-            <div className="rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] p-2 text-slate-950 font-black">
-              <Gamepad2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-white">
-                Player Profile &amp; Auth
-              </h2>
-              <p className="text-[11px] text-slate-400">
-                Firebase Authentication &amp; In-Game ID Sync
-              </p>
-            </div>
+        {/* Top Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              {mode === 'login' ? 'Welcome Back' : 'Join the Arena'}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              {mode === 'login' 
+                ? 'Login to submit results & track your rank.' 
+                : 'Create your player profile to compete.'}
+            </p>
           </div>
+
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white transition -mr-1 -mt-1"
+            title="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Tab Toggle */}
-        <div className="grid grid-cols-3 border-b border-slate-800 bg-slate-950/60 p-1">
+        {/* Navigation Tabs (LOGIN / REGISTER) - Exact design from screenshot */}
+        <div className="grid grid-cols-2 gap-2 bg-[#090d14] p-1.5 rounded-2xl my-5 border border-slate-800/60">
           <button
+            type="button"
             onClick={() => { setMode('login'); setError(''); }}
-            className={`py-2 text-xs font-bold rounded-lg transition ${
+            className={`py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
               mode === 'login'
-                ? 'bg-slate-800 text-[#00ff87] shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#00e575] text-slate-950 shadow-md shadow-[#00e575]/20'
+                : 'bg-transparent text-slate-400 hover:text-white'
             }`}
           >
-            Sign In
+            LOGIN
           </button>
           <button
+            type="button"
             onClick={() => { setMode('register'); setError(''); }}
-            className={`py-2 text-xs font-bold rounded-lg transition ${
+            className={`py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
               mode === 'register'
-                ? 'bg-slate-800 text-[#00ff87] shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#00e575] text-slate-950 shadow-md shadow-[#00e575]/20'
+                : 'bg-transparent text-slate-400 hover:text-white'
             }`}
           >
-            Register
-          </button>
-          <button
-            onClick={() => { setMode('switch'); setError(''); }}
-            className={`py-2 text-xs font-bold rounded-lg transition ${
-              mode === 'switch'
-                ? 'bg-slate-800 text-[#00ff87] shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Quick Switch
+            REGISTER
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 sm:p-5">
-          {error && (
-            <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-300">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{error}</span>
+        {/* Error Notification */}
+        {error && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-300">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* LOGIN FORM (Screenshot 1: EMAIL, PASSWORD, LOGIN button) */}
+        {mode === 'login' && (
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                EMAIL
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@email.com"
+                required
+                className="w-full rounded-xl bg-[#090d14] border border-slate-800 px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#00e575] transition-all"
+              />
             </div>
-          )}
 
-          {/* GOOGLE SIGN IN BUTTON */}
-          {mode !== 'switch' && (
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-800/80 py-2.5 text-xs font-bold text-white transition shadow-sm"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-                <span>Continue with Google</span>
-              </button>
-
-              <div className="relative my-3 text-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-800" />
-                </div>
-                <span className="relative bg-slate-900 px-3 text-[10px] uppercase font-bold text-slate-500">
-                  Or with email
-                </span>
-              </div>
+            <div>
+              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                PASSWORD
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="w-full rounded-xl bg-[#090d14] border border-slate-800 px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#00e575] transition-all"
+              />
             </div>
-          )}
 
-          {/* MODE: LOGIN */}
-          {mode === 'login' && (
-            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="player@efootball.com"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
-                  />
-                </div>
-              </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-2 rounded-xl bg-[#00e575] hover:bg-[#00c865] py-3.5 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00e575]/20 active:scale-[0.99] transition-all disabled:opacity-50"
+            >
+              {isLoading ? 'SIGNING IN...' : 'LOGIN'}
+            </button>
+          </form>
+        )}
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
-                  />
-                </div>
-              </div>
+        {/* REGISTER FORM (Screenshot 2: PLAYER NAME, EFOOTBALL ID, EMAIL, PASSWORD, CREATE ACCOUNT button) */}
+        {mode === 'register' && (
+          <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+            <div>
+              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                PLAYER NAME
+              </label>
+              <input
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Your display name"
+                required
+                className="w-full rounded-xl bg-[#090d14] border border-slate-800 px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#0084ff] transition-all"
+              />
+            </div>
 
-              <div className="pt-2">
+            <div>
+              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                EFOOTBALL ID
+              </label>
+              <input
+                type="text"
+                value={efootballId}
+                onChange={(e) => setEfootballId(e.target.value)}
+                placeholder="e.g. RONALDO_7"
+                required
+                className="w-full rounded-xl bg-[#090d14] border border-slate-800 px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#0084ff] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                EMAIL
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@email.com"
+                required
+                className="w-full rounded-xl bg-[#090d14] border border-slate-800 px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#0084ff] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                PASSWORD
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min 6 characters"
+                required
+                className="w-full rounded-xl bg-[#090d14] border border-slate-800 px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-[#0084ff] transition-all"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-2 rounded-xl bg-[#0084ff] hover:bg-[#0072dd] py-3.5 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-lg shadow-[#0084ff]/25 active:scale-[0.99] transition-all disabled:opacity-50"
+            >
+              {isLoading ? 'CREATING PROFILE...' : 'CREATE ACCOUNT'}
+            </button>
+          </form>
+        )}
+
+        {/* Optional Secondary Actions (Google Sign-In & Quick Player Switch for testing) */}
+        <div className="mt-5 pt-4 border-t border-slate-800/60 space-y-2.5">
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-[#090d14] hover:bg-slate-800/60 py-2.5 text-xs font-semibold text-slate-300 transition"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+
+          {/* Quick Switch Dropdown Toggle */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setShowQuickSwitch(!showQuickSwitch)}
+              className="text-[11px] text-slate-500 hover:text-slate-300 transition"
+            >
+              {showQuickSwitch ? 'Hide Quick Switch' : '⚡ Quick Switch Demo Players / Admin'}
+            </button>
+          </div>
+
+          {showQuickSwitch && (
+            <div className="rounded-xl border border-slate-800 bg-[#090d14] p-2 space-y-1 max-h-40 overflow-y-auto">
+              {allUsers.map((u) => (
                 <button
-                  type="submit"
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
+                  key={u.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectUser(u);
+                    onClose();
+                  }}
+                  className={`w-full flex items-center justify-between p-1.5 rounded-lg text-left text-xs transition ${
+                    currentUser.id === u.id 
+                      ? 'bg-slate-800 text-[#00e575]' 
+                      : 'hover:bg-slate-800/60 text-slate-300'
+                  }`}
                 >
-                  <LogIn className="w-4 h-4" />
-                  <span>Sign In</span>
+                  <div className="flex items-center gap-2">
+                    <img src={u.avatarUrl} alt={u.name} className="h-5 w-5 rounded object-cover" />
+                    <span className="font-medium truncate max-w-[150px]">{u.name}</span>
+                  </div>
+                  <span className={`text-[9px] uppercase px-1 py-0.2 rounded font-bold ${
+                    u.role === 'admin' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {u.role}
+                  </span>
                 </button>
-              </div>
-            </form>
-          )}
-
-          {/* MODE: REGISTER */}
-          {mode === 'register' && (
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  Full Name / Gamer Tag
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Kylian Striker"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  Email (Firebase Auth)
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="player@efootball.com"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Crucial: eFootball In-Game ID */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
-                  <span>eFootball In-Game ID</span>
-                  <span className="text-[10px] text-[#00ff87] lowercase">crucial for friend matches</span>
-                </label>
-                <div className="relative">
-                  <Gamepad2 className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    required
-                    value={efootballId}
-                    onChange={(e) => setEfootballId(e.target.value)}
-                    placeholder="e.g. 982-412-104"
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                    Favorite Club
-                  </label>
-                  <select
-                    value={favoriteClub}
-                    onChange={(e) => setFavoriteClub(e.target.value)}
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
-                  >
-                    <option value="FC Barcelona">FC Barcelona</option>
-                    <option value="Real Madrid">Real Madrid</option>
-                    <option value="Arsenal">Arsenal</option>
-                    <option value="Manchester City">Manchester City</option>
-                    <option value="Manchester United">Manchester United</option>
-                    <option value="Bayern Munich">Bayern Munich</option>
-                    <option value="Inter Milan">Inter Milan</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                    Role
-                  </label>
-                  <select
-                    value={role}
-                    onChange={(e: any) => setRole(e.target.value)}
-                    className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
-                  >
-                    <option value="player">Player (Contender)</option>
-                    <option value="admin">Admin (Manager Desk)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
-                >
-                  Create &amp; Sign In
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* MODE: SWITCH */}
-          {mode === 'switch' && (
-            <div className="space-y-3">
-              <p className="text-xs text-slate-400">
-                Click any profile to instantly switch perspective (useful for testing admin verification or multiple competitors):
-              </p>
-
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                {allUsers.map((user) => {
-                  const isActive = user.id === currentUser.id;
-                  return (
-                    <div
-                      key={user.id}
-                      onClick={() => {
-                        onSelectUser(user);
-                        onClose();
-                      }}
-                      className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 transition ${
-                        isActive
-                          ? 'border-[#00ff87] bg-[#00ff87]/10'
-                          : 'border-slate-800 bg-slate-950/70 hover:border-slate-700 hover:bg-slate-900'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img 
-                          src={user.avatarUrl} 
-                          alt={user.name} 
-                          className="h-9 w-9 rounded-xl object-cover border border-slate-700"
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-white truncate">{user.name}</span>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                              user.role === 'admin'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : 'bg-slate-800 text-slate-300'
-                            }`}>
-                              {user.role}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-mono block truncate">
-                            eFootball ID: {user.efootballId} • {user.favoriteClub}
-                          </span>
-                        </div>
-                      </div>
-
-                      {isActive && (
-                        <Check className="w-4 h-4 text-[#00ff87] flex-shrink-0 ml-2" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              ))}
             </div>
           )}
-
         </div>
 
       </div>

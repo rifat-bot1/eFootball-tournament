@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Tournament, UserProfile, LeaderboardEntry } from '../types/tournament';
 import confetti from 'canvas-confetti';
+import { Send, ExternalLink } from 'lucide-react';
 
 interface DashboardViewProps {
   tournaments: Tournament[];
@@ -179,6 +180,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Official Telegram Channel Banner */}
+      <a
+        href="https://t.me/eFootballTournamentBD"
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center justify-between p-3.5 rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-slate-900 to-sky-950/30 hover:border-sky-400 hover:bg-sky-900/30 transition group shadow-md"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 group-hover:scale-105 transition-transform">
+            <Send className="w-5 h-5 text-sky-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-white">Official Telegram Channel</span>
+              <span className="rounded bg-sky-500/20 px-1.5 py-0.2 text-[9px] font-bold text-sky-300">
+                @eFootballTournamentBD
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Live match fixtures, instant score announcements &amp; highlights
+            </p>
+          </div>
+        </div>
+        <ExternalLink className="w-4 h-4 text-sky-400 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+      </a>
 
       {/* Section: Active & Upcoming Tournaments */}
       <div>

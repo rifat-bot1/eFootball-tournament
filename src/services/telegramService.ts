@@ -49,6 +49,20 @@ export function saveStoredTelegramConfig(config: TelegramConfigSettings): void {
   localStorage.setItem(STORAGE_KEY_TELEGRAM, JSON.stringify(config));
 }
 
+export function cleanChatId(chatId?: string): string {
+  if (!chatId) return '-1003711089928';
+  const trimmed = chatId.trim();
+  if (trimmed.startsWith('@') || trimmed.startsWith('-')) {
+    return trimmed;
+  }
+  if (/^\d+$/.test(trimmed)) {
+    if (trimmed.startsWith('100')) {
+      return `-${trimmed}`;
+    }
+  }
+  return trimmed;
+}
+
 export interface TelegramDispatchResult {
   success: boolean;
   message: string;
@@ -59,7 +73,7 @@ export interface TelegramDispatchResult {
 }
 
 /**
- * Send notification to the PHP script or directly to Telegram
+ * Send notification to the server proxy, PHP script, or directly to Telegram
  */
 export async function sendTelegramNotification(
   eventData: {
@@ -68,8 +82,48 @@ export async function sendTelegramNotification(
   }
 ): Promise<TelegramDispatchResult> {
   const config = getStoredTelegramConfig();
+  const effectiveChatId = cleanChatId(config.chatId);
+  const effectiveBotToken = config.botToken || '8987455572:AAFoQqyXCFg4s2FbJmi5hC5pYnNuJo5f7Cw';
 
-  // If webhook is external (not the local dev server serving static files), call PHP webhook
+  // 1. Primary: Full-Stack Server Proxy (/api/telegram-notify)
+  // Executes on Node.js server with ZERO CORS restrictions!
+  try {
+    const proxyRes = await fetch('/api/telegram-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...eventData,
+        bot_token: effectiveBotToken,
+        chat_id: effectiveChatId
+      })
+    });
+
+    if (proxyRes.ok) {
+      const json = await proxyRes.json();
+      return {
+        success: true,
+        message: json.message || `Delivered to Telegram channel (${effectiveChatId})!`,
+        source: 'direct_telegram_api',
+        payload: eventData,
+        details: json
+      };
+    } else {
+      const errJson = await proxyRes.json().catch(() => null);
+      if (errJson?.message) {
+        return {
+          success: false,
+          message: errJson.message,
+          source: 'direct_telegram_api',
+          error: errJson.error,
+          details: errJson
+        };
+      }
+    }
+  } catch (proxyErr: any) {
+    console.warn('Server proxy /api/telegram-notify fetch error, attempting direct fallbacks:', proxyErr.message);
+  }
+
+  // 2. If user configured an external hosted PHP Webhook URL
   const isExternalPhpHost = Boolean(
     config.webhookUrl && 
     !config.webhookUrl.includes(window.location.host) &&
@@ -86,8 +140,8 @@ export async function sendTelegramNotification(
         },
         body: JSON.stringify({
           ...eventData,
-          bot_token: config.botToken || undefined,
-          chat_id: config.chatId || undefined
+          bot_token: effectiveBotToken,
+          chat_id: effectiveChatId
         })
       });
 
@@ -96,27 +150,27 @@ export async function sendTelegramNotification(
         const json = await response.json();
         return {
           success: true,
-          message: json.message || 'Notification sent via PHP Telegram Webhook!',
+          message: json.message || 'Notification sent via external PHP Telegram Webhook!',
           source: 'php_webhook',
           payload: eventData,
           details: json
         };
       }
     } catch (e: any) {
-      console.warn('Could not reach PHP webhook URL, attempting direct Telegram API:', e.message);
+      console.warn('Could not reach external PHP webhook URL:', e.message);
     }
   }
 
-  // Direct Telegram Bot API Dispatch (Works natively from browser!)
-  if (config.botToken && config.chatId) {
+  // 3. Fallback: Direct Client-Side Telegram Bot API Dispatch
+  if (effectiveBotToken && effectiveChatId) {
     try {
       const formattedText = formatTelegramMessageHtml(eventData);
-      const apiUrl = `https://api.telegram.org/bot${config.botToken}/sendMessage`;
+      const apiUrl = `https://api.telegram.org/bot${effectiveBotToken}/sendMessage`;
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: config.chatId,
+          chat_id: effectiveChatId,
           text: formattedText,
           parse_mode: 'HTML'
         })
@@ -125,7 +179,7 @@ export async function sendTelegramNotification(
       if (data.ok) {
         return {
           success: true,
-          message: 'Notification successfully delivered to Telegram channel!',
+          message: `Delivered to Telegram channel (${effectiveChatId})!`,
           source: 'direct_telegram_api',
           payload: eventData,
           details: data
@@ -133,7 +187,7 @@ export async function sendTelegramNotification(
       } else {
         let helpTip = '';
         if (data.description?.includes('chat not found') || data.description?.includes('bot is not a member')) {
-          helpTip = ' (Tip: Please add @eFootballTournamentBDBot to your Telegram channel as an Administrator with "Post Messages" permission!)';
+          helpTip = ' (Tip: Please ensure @eFootballTournamentBDBot is added to the channel as an Administrator with "Post Messages" permission!)';
         }
         return {
           success: false,
@@ -146,14 +200,14 @@ export async function sendTelegramNotification(
     } catch (err: any) {
       return {
         success: false,
-        message: 'Network error calling Telegram API: ' + err.message,
+        message: 'Could not connect to Telegram API: ' + err.message + '. Tip: Ensure bot is added as admin to @eFootballTournamentBD.',
         source: 'direct_telegram_api',
         error: err.message
       };
     }
   }
 
-  // Simulation fallback: records formatted message for previewing
+  // Simulation fallback
   return {
     success: true,
     message: 'Simulation: Notification formatted (Bot token or Chat ID missing)',
