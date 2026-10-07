@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "eFootball participant account details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "efootballId": { "type": "string", "maxLength": 50, "pattern": "^[0-9]{5,20}$" },
+        "avatarUrl": { "type": "string", "maxLength": 1000 },
+        "role": { "type": "string", "enum": ["player", "admin"] },
+        "favoriteClub": { "type": "string", "maxLength": 100 },
+        "rating": { "type": "number" },
+        "division": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "name", "email", "efootballId", "role"]
+    },
+    "Tournament": {
+      "title": "Tournament",
+      "description": "eFootball tournament competition event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "format": { "type": "string", "enum": ["single_elimination", "round_robin", "group_knockout"] },
+        "status": { "type": "string", "enum": ["upcoming", "ongoing", "completed"] },
+        "maxParticipants": { "type": "number" },
+        "entryFee": { "type": "number" },
+        "prizePool": { "type": "number" },
+        "startDate": { "type": "string", "maxLength": 50 },
+        "endDate": { "type": "string", "maxLength": 50 },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "title", "format", "status", "createdBy"]
+    },
+    "MatchFixture": {
+      "title": "MatchFixture",
+      "description": "Head-to-head eFootball match scheduled fixture",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "tournamentId": { "type": "string", "maxLength": 128 },
+        "round": { "type": "number" },
+        "matchNumber": { "type": "number" },
+        "player1Id": { "type": "string", "maxLength": 128 },
+        "player1Name": { "type": "string", "maxLength": 100 },
+        "player1EfootballId": { "type": "string", "maxLength": 50 },
+        "player2Id": { "type": "string", "maxLength": 128 },
+        "player2Name": { "type": "string", "maxLength": 100 },
+        "player2EfootballId": { "type": "string", "maxLength": 50 },
+        "scheduledAt": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["scheduled", "submitted", "approved", "rejected"] },
+        "submittedAt": { "type": "string", "maxLength": 50 },
+        "reviewedBy": { "type": "string", "maxLength": 100 },
+        "reviewedAt": { "type": "string", "maxLength": 50 },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "tournamentId", "player1Id", "player2Id", "status"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Tournament administration authorized role",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["admin"] },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Registered eFootball players"
+    },
+    "/tournaments/{tournamentId}": {
+      "schema": "Tournament",
+      "description": "Tournament events and settings"
+    },
+    "/fixtures/{fixtureId}": {
+      "schema": "MatchFixture",
+      "description": "Match fixtures, result scores and screenshots"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Authorized administrators"
+    }
+  }
+}

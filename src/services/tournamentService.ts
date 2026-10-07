@@ -15,10 +15,25 @@ import {
   syncUserToFirestore 
 } from './firebase';
 
-const STORAGE_USERS = 'efootball_users_v1';
-const STORAGE_CURRENT_USER = 'efootball_current_user_v1';
-const STORAGE_TOURNAMENTS = 'efootball_tournaments_v1';
-const STORAGE_FIXTURES = 'efootball_fixtures_v1';
+const STORAGE_USERS = 'efootball_users_clean_v3';
+const STORAGE_CURRENT_USER = 'efootball_current_user_clean_v3';
+const STORAGE_PERMANENT_USER = 'efootball_active_user_session_permanent';
+const STORAGE_TOURNAMENTS = 'efootball_tournaments_clean_v3';
+const STORAGE_FIXTURES = 'efootball_fixtures_clean_v3';
+
+// Immediate cleanup of old legacy demo keys from browser
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('efootball_users_v1');
+    localStorage.removeItem('efootball_tournaments_v1');
+    localStorage.removeItem('efootball_fixtures_v1');
+    localStorage.removeItem('efootball_current_user_v1');
+    localStorage.removeItem('efootball_users_v2');
+    localStorage.removeItem('efootball_tournaments_v2');
+    localStorage.removeItem('efootball_fixtures_v2');
+    localStorage.removeItem('efootball_current_user_v2');
+  } catch (e) {}
+}
 
 // Initial state helpers
 export function getUsers(): UserProfile[] {
@@ -26,48 +41,131 @@ export function getUsers(): UserProfile[] {
     const raw = localStorage.getItem(STORAGE_USERS);
     if (raw) {
       const parsed: UserProfile[] = JSON.parse(raw);
-      // Migrate admin profile to Mohammad Rifat if needed
-      const adminIdx = parsed.findIndex(u => u.id === 'user_admin_01' || u.role === 'admin');
-      if (adminIdx !== -1 && parsed[adminIdx].name !== 'Mohammad Rifat (Admin)') {
-        parsed[adminIdx] = SEED_PLAYERS[0];
-        localStorage.setItem(STORAGE_USERS, JSON.stringify(parsed));
+      // Remove any leftover demo player emails
+      const cleaned = parsed.filter(u => 
+        !['striker@efootball.com', 'neymar@efootball.com', 'saka@efootball.com', 'haaland@efootball.com', 'messi@efootball.com', 'yamal@efootball.com', 'bellingham@efootball.com', 'debruyne@efootball.com'].includes(u.email)
+      );
+      if (cleaned.length === 0) {
+        cleaned.push(SEED_PLAYERS[0]);
       }
-      return parsed;
+      localStorage.setItem(STORAGE_USERS, JSON.stringify(cleaned));
+      return cleaned;
     }
   } catch (e) {}
   localStorage.setItem(STORAGE_USERS, JSON.stringify(SEED_PLAYERS));
   return SEED_PLAYERS;
 }
 
+/**
+ * Returns currently saved persistent user session.
+ * Always remembers the logged-in user across tab reloads, restarts, and sessions.
+ */
 export function getCurrentUser(): UserProfile {
   try {
-    const raw = localStorage.getItem(STORAGE_CURRENT_USER);
+    const raw = localStorage.getItem(STORAGE_PERMANENT_USER) || localStorage.getItem(STORAGE_CURRENT_USER);
     if (raw) {
       const parsed: UserProfile = JSON.parse(raw);
-      if (parsed.id === 'user_admin_01' && parsed.name !== 'Mohammad Rifat (Admin)') {
-        localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(SEED_PLAYERS[0]));
-        return SEED_PLAYERS[0];
+      if (parsed && parsed.id && parsed.name && parsed.efootballId) {
+        return parsed;
       }
-      return parsed;
     }
   } catch (e) {}
-  // Default to Mohammad Rifat (Admin)
   const defaultUser = SEED_PLAYERS[0];
-  localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(defaultUser));
+  try {
+    localStorage.setItem(STORAGE_PERMANENT_USER, JSON.stringify(defaultUser));
+    localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(defaultUser));
+  } catch (e) {}
   return defaultUser;
 }
 
+/**
+ * Persist user permanently into localStorage and sync with app users
+ */
 export function setCurrentUser(user: UserProfile): void {
-  localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(user));
+  try {
+    localStorage.setItem(STORAGE_PERMANENT_USER, JSON.stringify(user));
+    localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(user));
+    // Remember eFootball ID specifically for this email
+    if (user.email && user.efootballId) {
+      localStorage.setItem(`efootball_saved_id_${user.email.toLowerCase()}`, user.efootballId);
+    }
+    const users = getUsers();
+    const idx = users.findIndex(u => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...user };
+    } else {
+      users.push(user);
+    }
+    localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+  } catch (e) {}
+}
+
+/**
+ * Explicit logout clearing session
+ */
+export function clearCurrentUserSession(): void {
+  try {
+    localStorage.removeItem(STORAGE_PERMANENT_USER);
+    localStorage.removeItem(STORAGE_CURRENT_USER);
+  } catch (e) {}
+}
+
+/**
+ * Helper to match or create a profile for an authenticated Firebase user
+ */
+export function getOrCreateUserProfileForAuth(
+  authEmail: string, 
+  displayName?: string, 
+  photoURL?: string,
+  preferredEfootballId?: string
+): UserProfile {
+  const users = getUsers();
+  const existing = users.find(u => u.email.toLowerCase() === authEmail.toLowerCase());
+  if (existing) {
+    if (preferredEfootballId && preferredEfootballId !== existing.efootballId) {
+      existing.efootballId = preferredEfootballId;
+    }
+    setCurrentUser(existing);
+    return existing;
+  }
+
+  const rememberedId = preferredEfootballId || 
+    localStorage.getItem(`efootball_saved_id_${authEmail.toLowerCase()}`) || 
+    `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+
+  const newUser: UserProfile = {
+    id: `user_${Date.now()}`,
+    name: displayName || authEmail.split('@')[0],
+    email: authEmail,
+    efootballId: rememberedId,
+    avatarUrl: photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName || authEmail)}`,
+    role: authEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player',
+    favoriteClub: 'eFootball FC',
+    rating: 1500,
+    division: 'Division 3',
+    createdAt: new Date().toISOString()
+  };
+
+  users.push(newUser);
+  localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+  setCurrentUser(newUser);
+  syncUserToFirestore(newUser).catch(() => {});
+  return newUser;
 }
 
 export function getTournaments(): Tournament[] {
   try {
     const raw = localStorage.getItem(STORAGE_TOURNAMENTS);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: Tournament[] = JSON.parse(raw);
+      // Filter out demo tournaments
+      const cleaned = parsed.filter(t => !['tour_01', 'tour_02', 'tour_03'].includes(t.id));
+      localStorage.setItem(STORAGE_TOURNAMENTS, JSON.stringify(cleaned));
+      return cleaned;
+    }
   } catch (e) {}
-  localStorage.setItem(STORAGE_TOURNAMENTS, JSON.stringify(SEED_TOURNAMENTS));
-  return SEED_TOURNAMENTS;
+  localStorage.setItem(STORAGE_TOURNAMENTS, JSON.stringify([]));
+  return [];
 }
 
 export function saveTournaments(tournaments: Tournament[]): void {
@@ -77,10 +175,16 @@ export function saveTournaments(tournaments: Tournament[]): void {
 export function getFixtures(): MatchFixture[] {
   try {
     const raw = localStorage.getItem(STORAGE_FIXTURES);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: MatchFixture[] = JSON.parse(raw);
+      // Filter out demo fixtures
+      const cleaned = parsed.filter(f => !f.id.startsWith('fix_10') && !f.id.startsWith('fix_20') && !f.id.startsWith('fix_30'));
+      localStorage.setItem(STORAGE_FIXTURES, JSON.stringify(cleaned));
+      return cleaned;
+    }
   } catch (e) {}
-  localStorage.setItem(STORAGE_FIXTURES, JSON.stringify(SEED_FIXTURES));
-  return SEED_FIXTURES;
+  localStorage.setItem(STORAGE_FIXTURES, JSON.stringify([]));
+  return [];
 }
 
 export function saveFixtures(fixtures: MatchFixture[]): void {
@@ -155,6 +259,26 @@ export function joinTournament(tournamentId: string, user: UserProfile): Tournam
   tour.registeredPlayerIds.push(user.id);
   tournaments[index] = { ...tour };
   saveTournaments(tournaments);
+  syncTournamentToFirestore(tour).catch(() => {});
+
+  // Send real-time notification to Telegram channel with player & tournament details
+  sendTelegramNotification({
+    event: 'player_joined_tournament',
+    tournament_title: tour.title,
+    player_name: user.name,
+    efootball_id: user.efootballId,
+    player_email: user.email,
+    favorite_club: user.favoriteClub,
+    division: user.division,
+    current_players: tour.registeredPlayerIds.length,
+    max_players: tour.maxPlayers,
+    entry_fee: (tour as any).entryFee || 0,
+    prize_pool: tour.prizePool,
+    joined_at: new Date().toLocaleString()
+  }).catch((err) => {
+    console.warn('Failed dispatching player join notification to Telegram:', err);
+  });
+
   return tour;
 }
 
@@ -560,11 +684,11 @@ export function calculateLeaderboard(tournamentId?: string): LeaderboardEntry[] 
 }
 
 /**
- * Reset all data to seeds
+ * Reset all data to clean initial state
  */
 export function resetToSeedData() {
   localStorage.setItem(STORAGE_USERS, JSON.stringify(SEED_PLAYERS));
-  localStorage.setItem(STORAGE_TOURNAMENTS, JSON.stringify(SEED_TOURNAMENTS));
-  localStorage.setItem(STORAGE_FIXTURES, JSON.stringify(SEED_FIXTURES));
-  localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(SEED_PLAYERS[1]));
+  localStorage.setItem(STORAGE_TOURNAMENTS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_FIXTURES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(SEED_PLAYERS[0]));
 }

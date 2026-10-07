@@ -14,7 +14,9 @@ import {
   Award, 
   Zap, 
   ShieldAlert,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Plus,
+  BookOpen
 } from 'lucide-react';
 import { Tournament, UserProfile, LeaderboardEntry } from '../types/tournament';
 import confetti from 'canvas-confetti';
@@ -28,6 +30,7 @@ interface DashboardViewProps {
   onNavigateToFixtures: (tournamentId?: string) => void;
   onNavigateToSubmit: () => void;
   onOpenCreateModal: () => void;
+  onNavigateToRules?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -37,7 +40,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onJoinTournament,
   onNavigateToFixtures,
   onNavigateToSubmit,
-  onOpenCreateModal
+  onOpenCreateModal,
+  onNavigateToRules
 }) => {
   const [copiedId, setCopiedId] = useState(false);
   const [joinedAlert, setJoinedAlert] = useState<string | null>(null);
@@ -61,7 +65,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         spread: 60,
         origin: { y: 0.7 }
       });
-      setJoinedAlert(`Successfully joined "${tour.title}"! Get ready for your fixtures.`);
+      setJoinedAlert(`Successfully joined "${tour.title}"! Details sent to Telegram channel.`);
       setTimeout(() => setJoinedAlert(null), 4000);
     } catch (err: any) {
       alert(err.message);
@@ -160,7 +164,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="flex h-2 w-2 rounded-full bg-[#00ff87] animate-ping" />
             <span className="text-xs text-slate-300 font-medium">Ready for eFootball matchday!</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={onNavigateToSubmit}
               className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-4 py-2 text-xs font-black text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
@@ -168,6 +172,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Upload className="w-3.5 h-3.5" />
               <span>Submit Match Screenshot</span>
             </button>
+            {onNavigateToRules && (
+              <button
+                onClick={onNavigateToRules}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#00ff87]" />
+                <span>Rules</span>
+              </button>
+            )}
             {currentUser.role === 'admin' && (
               <button
                 onClick={onOpenCreateModal}
@@ -181,31 +194,58 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Official Telegram Channel Banner */}
-      <a
-        href="https://t.me/eFootballTournamentBD"
-        target="_blank"
-        rel="noreferrer"
-        className="flex items-center justify-between p-3.5 rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-slate-900 to-sky-950/30 hover:border-sky-400 hover:bg-sky-900/30 transition group shadow-md"
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 group-hover:scale-105 transition-transform">
-            <Send className="w-5 h-5 text-sky-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black text-white">Official Telegram Channel</span>
-              <span className="rounded bg-sky-500/20 px-1.5 py-0.2 text-[9px] font-bold text-sky-300">
-                @eFootballTournamentBD
-              </span>
+      {/* Official Telegram Channel & Tournament Rules Quick Banners */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <a
+          href="https://t.me/eFootballTournamentBD"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-between p-3.5 rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-slate-900 to-sky-950/30 hover:border-sky-400 hover:bg-sky-900/30 transition group shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 group-hover:scale-105 transition-transform">
+              <Send className="w-5 h-5 text-sky-400" />
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              Live match fixtures, instant score announcements &amp; highlights
-            </p>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-white">Official Telegram Channel</span>
+                <span className="rounded bg-sky-500/20 px-1.5 py-0.2 text-[9px] font-bold text-sky-300">
+                  @eFootballTournamentBD
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Live match fixtures, instant score announcements &amp; highlights
+              </p>
+            </div>
           </div>
-        </div>
-        <ExternalLink className="w-4 h-4 text-sky-400 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
-      </a>
+          <ExternalLink className="w-4 h-4 text-sky-400 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+        </a>
+
+        {onNavigateToRules && (
+          <div
+            onClick={onNavigateToRules}
+            className="cursor-pointer flex items-center justify-between p-3.5 rounded-2xl border border-[#00ff87]/30 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 hover:border-[#00ff87]/60 hover:bg-emerald-950/30 transition group shadow-md"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00ff87]/15 text-[#00ff87] border border-[#00ff87]/30 group-hover:scale-105 transition-transform">
+                <BookOpen className="w-5 h-5 text-[#00ff87]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-white">Tournament &amp; Fair Play Rules</span>
+                  <span className="rounded bg-[#00ff87]/20 px-1.5 py-0.2 text-[9px] font-bold text-[#00ff87]">
+                    Guidelines
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Screenshot requirements, match lobby rules &amp; scoring system
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-[#00ff87] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" />
+          </div>
+        )}
+      </div>
 
       {/* Section: Active & Upcoming Tournaments */}
       <div>
@@ -226,117 +266,136 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tournaments.map((tour) => {
-            const isJoined = tour.registeredPlayerIds.includes(currentUser.id);
-            const isFull = tour.registeredPlayerIds.length >= tour.maxPlayers;
-
-            return (
-              <div 
-                key={tour.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 glass-card-hover"
+        {tournaments.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-8 sm:p-12 text-center text-slate-400">
+            <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+            <h3 className="text-base font-bold text-white">No Tournaments Created Yet</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              All demo tournaments have been removed. Admins can create new real tournaments from the Admin Desk.
+            </p>
+            {currentUser.role === 'admin' && (
+              <button
+                onClick={onOpenCreateModal}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-5 py-2.5 text-xs font-black uppercase text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
               >
-                {/* Banner Image */}
-                <div className="relative h-36 w-full overflow-hidden bg-slate-950">
-                  <img 
-                    src={tour.bannerUrl} 
-                    alt={tour.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                  
-                  {/* Status Badges */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                      tour.status === 'ongoing' 
-                        ? 'bg-[#00ff87] text-slate-950 shadow-md shadow-[#00ff87]/30' 
-                        : tour.status === 'completed'
-                        ? 'bg-slate-700 text-slate-200'
-                        : 'bg-sky-500 text-slate-950'
-                    }`}>
-                      {tour.status}
-                    </span>
-                    <span className="rounded-md bg-black/70 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-slate-300 uppercase">
-                      {tour.format}
-                    </span>
-                  </div>
+                <Plus className="w-4 h-4" />
+                <span>Create Tournament</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tournaments.map((tour) => {
+              const isJoined = tour.registeredPlayerIds.includes(currentUser.id);
+              const isFull = tour.registeredPlayerIds.length >= tour.maxPlayers;
 
-                  {/* Registered count pill */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1 rounded-md bg-black/70 backdrop-blur-md px-2 py-0.5 text-[11px] font-semibold text-white">
-                    <Users className="w-3 h-3 text-[#00ff87]" />
-                    <span>{tour.registeredPlayerIds.length}/{tour.maxPlayers}</span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <h3 className="text-base font-bold text-white group-hover:text-[#00ff87] transition-colors line-clamp-1">
-                      {tour.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-400 line-clamp-2">
-                      {tour.description}
-                    </p>
-                  </div>
-
-                  {/* Rules & Prize Specs */}
-                  <div className="space-y-1.5 rounded-xl bg-slate-950/60 p-2.5 border border-slate-800/80 text-[11px]">
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Duration:
+              return (
+                <div 
+                  key={tour.id}
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 glass-card-hover"
+                >
+                  {/* Banner Image */}
+                  <div className="relative h-36 w-full overflow-hidden bg-slate-950">
+                    <img 
+                      src={tour.bannerUrl} 
+                      alt={tour.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+                    
+                    {/* Status Badges */}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                        tour.status === 'ongoing' 
+                          ? 'bg-[#00ff87] text-slate-950 shadow-md shadow-[#00ff87]/30' 
+                          : tour.status === 'completed'
+                          ? 'bg-slate-700 text-slate-200'
+                          : 'bg-sky-500 text-slate-950'
+                      }`}>
+                        {tour.status}
                       </span>
-                      <strong className="text-slate-200">{tour.rules.matchLength}</strong>
-                    </div>
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <Gamepad2 className="w-3 h-3" /> Extra / PK:
-                      </span>
-                      <span>
-                        ET: {tour.rules.extraTime ? 'ON' : 'OFF'} • PK: {tour.rules.penalties ? 'ON' : 'OFF'}
+                      <span className="rounded-md bg-black/70 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-slate-300 uppercase">
+                        {tour.format}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-slate-300">
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <Award className="w-3 h-3 text-amber-400" /> Reward:
-                      </span>
-                      <span className="font-bold text-amber-300 truncate max-w-[150px]">{tour.prizePool}</span>
+
+                    {/* Registered count pill */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-md bg-black/70 backdrop-blur-md px-2 py-0.5 text-[11px] font-semibold text-white">
+                      <Users className="w-3 h-3 text-[#00ff87]" />
+                      <span>{tour.registeredPlayerIds.length}/{tour.maxPlayers}</span>
                     </div>
                   </div>
 
-                  {/* Action Button */}
-                  <div className="pt-2 flex items-center gap-2">
-                    {isJoined ? (
-                      <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-2.5 text-xs font-bold text-[#00ff87]">
-                        <Check className="w-4 h-4" />
-                        <span>Registered Player</span>
+                  {/* Content */}
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                      <h3 className="text-base font-bold text-white group-hover:text-[#00ff87] transition-colors line-clamp-1">
+                        {tour.title}
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-400 line-clamp-2">
+                        {tour.description}
+                      </p>
+                    </div>
+
+                    {/* Rules & Prize Specs */}
+                    <div className="space-y-1.5 rounded-xl bg-slate-950/60 p-2.5 border border-slate-800/80 text-[11px]">
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-500 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Duration:
+                        </span>
+                        <strong className="text-slate-200">{tour.rules.matchLength}</strong>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => handleJoin(tour)}
-                        disabled={isFull}
-                        className={`flex-1 rounded-xl py-2.5 text-xs font-black uppercase tracking-wider transition ${
-                          isFull
-                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-[#00ff87] to-[#00e5ff] text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95'
-                        }`}
-                      >
-                        {isFull ? 'Tournament Full' : 'Join Tournament'}
-                      </button>
-                    )}
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-500 flex items-center gap-1">
+                          <Gamepad2 className="w-3 h-3" /> Extra / PK:
+                        </span>
+                        <span>
+                          ET: {tour.rules.extraTime ? 'ON' : 'OFF'} • PK: {tour.rules.penalties ? 'ON' : 'OFF'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-500 flex items-center gap-1">
+                          <Award className="w-3 h-3 text-amber-400" /> Reward:
+                        </span>
+                        <span className="font-bold text-amber-300 truncate max-w-[150px]">{tour.prizePool}</span>
+                      </div>
+                    </div>
 
-                    <button
-                      onClick={() => onNavigateToFixtures(tour.id)}
-                      className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5 text-slate-300 hover:text-white hover:border-[#00ff87]/50 transition"
-                      title="View Fixtures & Standings"
-                    >
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+                    {/* Action Button */}
+                    <div className="pt-2 flex items-center gap-2">
+                      {isJoined ? (
+                        <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-2.5 text-xs font-bold text-[#00ff87]">
+                          <Check className="w-4 h-4" />
+                          <span>Registered Player</span>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleJoin(tour)}
+                          disabled={isFull}
+                          className={`flex-1 rounded-xl py-2.5 text-xs font-black uppercase tracking-wider transition ${
+                            isFull
+                              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-[#00ff87] to-[#00e5ff] text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95'
+                          }`}
+                        >
+                          {isFull ? 'Tournament Full' : 'Join Tournament'}
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => onNavigateToFixtures(tour.id)}
+                        className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5 text-slate-300 hover:text-white hover:border-[#00ff87]/50 transition"
+                        title="View Fixtures & Standings"
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Rules Notice for Players */}

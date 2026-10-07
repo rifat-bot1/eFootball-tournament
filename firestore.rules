@@ -1,0 +1,132 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all undefined paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Hardened Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'rfrifatbs@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation for User Profile
+    function isValidUserProfile(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.efootballId is string && data.efootballId.size() <= 50 &&
+             data.role in ['player', 'admin'];
+    }
+
+    // Validation for Tournament
+    function isValidTournament(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.format in ['single_elimination', 'round_robin', 'group_knockout'] &&
+             data.status in ['upcoming', 'ongoing', 'completed'] &&
+             data.createdBy is string && data.createdBy.size() <= 128;
+    }
+
+    // Validation for Match Fixture
+    function isValidMatchFixture(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.tournamentId is string && data.tournamentId.size() <= 128 &&
+             data.player1Id is string && data.player1Id.size() <= 128 &&
+             data.player2Id is string && data.player2Id.size() <= 128 &&
+             data.status in ['scheduled', 'submitted', 'approved', 'rejected'];
+    }
+
+    // Test connection doc (Required by Firebase skill)
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId);
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       (incoming().role == 'player' || isAdmin());
+      allow update: if isSignedIn() && isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       (
+                         isAdmin() ||
+                         (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'efootballId', 'favoriteClub', 'avatarUrl', 'rating', 'division']))
+                       );
+      allow delete: if isAdmin();
+    }
+
+    // Tournaments Collection
+    match /tournaments/{tournamentId} {
+      allow get: if isValidId(tournamentId);
+      allow list: if true;
+      allow create: if isSignedIn() && isValidId(tournamentId) &&
+                       isValidTournament(incoming()) &&
+                       isAdmin();
+      allow update: if isSignedIn() && isValidId(tournamentId) &&
+                       isValidTournament(incoming()) &&
+                       (
+                         isAdmin() ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['participants'])
+                       );
+      allow delete: if isAdmin();
+    }
+
+    // Fixtures Collection
+    match /fixtures/{fixtureId} {
+      allow get: if isValidId(fixtureId);
+      allow list: if true;
+      allow create: if isSignedIn() && isValidId(fixtureId) &&
+                       isValidMatchFixture(incoming()) &&
+                       isAdmin();
+      allow update: if isSignedIn() && isValidId(fixtureId) &&
+                       isValidMatchFixture(incoming()) &&
+                       (
+                         isAdmin() ||
+                         // Player submitting their score
+                         (
+                           (request.auth.uid == existing().player1Id || request.auth.uid == existing().player2Id) &&
+                           existing().status in ['scheduled', 'rejected'] &&
+                           incoming().status == 'submitted' &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'result', 'submittedAt', 'notes'])
+                         )
+                       );
+      allow delete: if isAdmin();
+    }
+  }
+}

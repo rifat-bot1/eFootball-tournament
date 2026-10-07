@@ -140,10 +140,6 @@ export const ResultSubmissionModal: React.FC<ResultSubmissionModalProps> = ({
       setErrorMessage('Please select a fixture first.');
       return;
     }
-    if (!screenshotData) {
-      setErrorMessage('Screenshot of the match result is required for admin verification.');
-      return;
-    }
 
     try {
       setIsSubmitting(true);
@@ -160,7 +156,7 @@ export const ResultSubmissionModal: React.FC<ResultSubmissionModalProps> = ({
       await onSubmitResult(currentFixture.id, {
         player1Score,
         player2Score,
-        screenshotUrlOrBase64: screenshotData,
+        screenshotUrlOrBase64: screenshotData || '',
         notes
       });
 
@@ -309,19 +305,24 @@ export const ResultSubmissionModal: React.FC<ResultSubmissionModalProps> = ({
             </div>
           )}
 
-          {/* Screenshot Upload Dropzone */}
+          {/* Screenshot Upload Dropzone (Optional) */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Match Result Screenshot (Firebase Storage)
-              </label>
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Match Screenshot Proof
+                </label>
+                <span className="rounded bg-slate-800 border border-slate-700 px-1.5 py-0.2 text-[10px] font-bold text-slate-400">
+                  Optional / অপশনাল
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={handleUseSampleScreenshot}
                 className="inline-flex items-center gap-1 text-[11px] font-bold text-[#00e5ff] hover:underline"
               >
                 <Sparkles className="w-3 h-3" />
-                <span>Use Sample Screenshot</span>
+                <span>Use Sample</span>
               </button>
             </div>
 
@@ -352,9 +353,30 @@ export const ResultSubmissionModal: React.FC<ResultSubmissionModalProps> = ({
                   />
                   <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#00ff87]">
                     <Check className="w-4 h-4" />
-                    <span>Screenshot attached ready for Firebase upload</span>
+                    <span>Screenshot attached (Optional)</span>
                   </div>
-                  <p className="text-[10px] text-slate-400">Click to replace screenshot</p>
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white"
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setScreenshotData('');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-xs text-rose-300 hover:bg-rose-500/30"
+                    >
+                      Remove Photo
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2 py-4">
@@ -363,10 +385,10 @@ export const ResultSubmissionModal: React.FC<ResultSubmissionModalProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-slate-200">
-                      Tap or drag & drop eFootball match screenshot here
+                      Tap or drag match screenshot here (Optional / ইচ্ছা হলে দিতে পারেন)
                     </p>
                     <p className="text-[10px] text-slate-500 mt-0.5">
-                      Supports PNG, JPG, or WebP full-time screens
+                      ছবি না দিয়েও স্কোর সাবমিট করা যাবে
                     </p>
                   </div>
                 </div>

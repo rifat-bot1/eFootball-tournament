@@ -1,43 +1,33 @@
 /**
  * =========================================================================
- * eFootball Tournament Arena - Firebase Modular Service
- * =========================================================================
- * 
- * Tech Stack: Firebase Web SDK v11 (Auth, Firestore, Storage)
- * 
- * WHERE TO PUT YOUR FIREBASE CONFIG KEYS:
- * 1. Go to Firebase Console (https://console.firebase.google.com/)
- * 2. Add a Web App in your Firebase Project settings
- * 3. Copy the credentials and replace the placeholder object below, OR
- *    enter them directly into the "Firebase Settings" modal inside the app UI!
- * 4. Remember to enable:
- *    - Authentication -> Email/Password & Google provider
- *    - Firestore Database -> Create database in production/test rules
- *    - Firebase Storage -> Get started
+ * eFootball Tournament Arena - Provisioned Firebase Integration
  * =========================================================================
  */
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAnalytics, isSupported as isAnalyticsSupported, Analytics } from 'firebase/analytics';
 import { 
   getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut as firebaseSignOut,
   GoogleAuthProvider, 
-  signInWithPopup,
+  signInWithPopup, 
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  User as FirebaseUser,
   Auth
 } from 'firebase/auth';
 import { 
   getFirestore, 
-  collection, 
   doc, 
+  getDocFromServer, 
+  collection, 
   setDoc, 
   getDoc, 
   getDocs, 
   updateDoc, 
   query, 
   where,
+  onSnapshot,
   Firestore 
 } from 'firebase/firestore';
 import { 
@@ -47,110 +37,125 @@ import {
   getDownloadURL,
   FirebaseStorage 
 } from 'firebase/storage';
-import { FirebaseConfigSettings, UserProfile, MatchFixture, Tournament, LeaderboardEntry } from '../types/tournament';
+import firebaseConfig from '../../firebase-applet-config.json';
+import { UserProfile, MatchFixture, Tournament, LeaderboardEntry } from '../types/tournament';
 
-// User's Active Firebase Configuration
-export const DEFAULT_FIREBASE_CONFIG: FirebaseConfigSettings = {
-  apiKey: "AIzaSyAaS43F8wsXW7nBStStn9_Oy3beTzzmi2s",
-  authDomain: "efootball-tournament-390f3.firebaseapp.com",
-  projectId: "efootball-tournament-390f3",
-  storageBucket: "efootball-tournament-390f3.firebasestorage.app",
-  messagingSenderId: "366690770197",
-  appId: "1:366690770197:web:04abb659578cde5aee1d1c",
-  measurementId: "G-S9P6QB49NM",
-  isConfigured: true
-};
+// 1. Initialize Firebase App and Services
+export const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+/* CRITICAL: The app will break without specifying firestoreDatabaseId */
+export const db: Firestore = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const auth: Auth = getAuth(app);
+export const storage: FirebaseStorage = getStorage(app);
 
-const STORAGE_KEY_FIREBASE = 'efootball_firebase_custom_config';
+// Enable permanent local persistence for Firebase Auth session
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.warn('Firebase auth persistence setup:', err);
+  });
+}
 
-export function getStoredFirebaseConfig(): FirebaseConfigSettings {
+export function onFirebaseAuthStateChanged(callback: (user: FirebaseUser | null) => void) {
+  return onAuthStateChanged(auth, callback);
+}
+
+// 2. Validate Connection to Firestore on Boot
+async function testConnection() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_FIREBASE);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.apiKey && !parsed.apiKey.includes('Dummy')) {
-        return { ...parsed, isConfigured: true };
-      }
-    }
-  } catch (e) {
-    console.error('Failed reading firebase config from storage', e);
-  }
-  return DEFAULT_FIREBASE_CONFIG;
-}
-
-export function saveStoredFirebaseConfig(config: FirebaseConfigSettings): void {
-  localStorage.setItem(STORAGE_KEY_FIREBASE, JSON.stringify(config));
-}
-
-let firebaseAppInstance: FirebaseApp | null = null;
-let authInstance: Auth | null = null;
-let firestoreInstance: Firestore | null = null;
-let storageInstance: FirebaseStorage | null = null;
-let analyticsInstance: Analytics | null = null;
-
-export function initFirebase() {
-  const config = getStoredFirebaseConfig();
-  if (config.apiKey && !config.apiKey.includes('Dummy')) {
-    try {
-      if (!getApps().length) {
-        firebaseAppInstance = initializeApp(config);
-      } else {
-        firebaseAppInstance = getApp();
-      }
-      authInstance = getAuth(firebaseAppInstance);
-      firestoreInstance = getFirestore(firebaseAppInstance);
-      storageInstance = getStorage(firebaseAppInstance);
-
-      // Safe Analytics initialization
-      if (typeof window !== 'undefined' && config.measurementId) {
-        isAnalyticsSupported().then((supported) => {
-          if (supported && firebaseAppInstance) {
-            analyticsInstance = getAnalytics(firebaseAppInstance);
-          }
-        }).catch(() => {});
-      }
-
-      console.log('✅ Real Firebase SDK connected: ' + config.projectId);
-      return { 
-        app: firebaseAppInstance, 
-        auth: authInstance, 
-        db: firestoreInstance, 
-        storage: storageInstance, 
-        analytics: analyticsInstance,
-        live: true 
-      };
-    } catch (err) {
-      console.warn('⚠️ Firebase initialization notice:', err);
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log('✅ Successfully connected to Firestore database:', firebaseConfig.firestoreDatabaseId);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error('Please check your Firebase configuration.');
     }
   }
-  return { app: null, auth: null, db: null, storage: null, analytics: null, live: false };
+}
+testConnection();
+
+// 3. Structured Firestore Error Handling (Skill Directive)
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
 }
 
-// Initial setup
-export const firebaseServices = initFirebase();
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): never {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// 4. Google Authentication (Skill Directive: Only Google login via signInWithPopup)
+export async function signInWithGoogle(): Promise<FirebaseUser> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
+  } catch (error) {
+    console.error('Google Sign-In Error:', error);
+    throw error;
+  }
+}
+
+export async function logOut(): Promise<void> {
+  await firebaseSignOut(auth);
+}
+
+// 5. High-level Sync Functions for Tournament Arena
 
 /**
- * Upload match result screenshot to Firebase Storage (with local fallback)
+ * Upload match screenshot to Firebase Storage with fallback
  */
 export async function uploadMatchScreenshot(
   dataUrlOrFile: string, 
   matchId: string, 
   uploaderId: string
 ): Promise<string> {
-  const { storage, live } = initFirebase();
-
-  if (live && storage && dataUrlOrFile.startsWith('data:')) {
+  if (dataUrlOrFile.startsWith('data:')) {
     try {
       const storageRef = ref(storage, `match_screenshots/${matchId}_${uploaderId}_${Date.now()}.png`);
       const snapshot = await uploadString(storageRef, dataUrlOrFile, 'data_url');
       const downloadUrl = await getDownloadURL(snapshot.ref);
-      console.log('✅ Screenshot uploaded to Firebase Storage:', downloadUrl);
       return downloadUrl;
     } catch (e) {
-      console.warn('Firebase storage upload fallback to data URL:', e);
+      console.warn('Storage upload fallback to data URI:', e);
     }
   }
-
   return dataUrlOrFile;
 }
 
@@ -158,13 +163,11 @@ export async function uploadMatchScreenshot(
  * Sync tournament to Firestore database
  */
 export async function syncTournamentToFirestore(tournament: Tournament): Promise<void> {
-  const { db, live } = initFirebase();
-  if (live && db) {
-    try {
-      await setDoc(doc(db, 'tournaments', tournament.id), tournament, { merge: true });
-    } catch (e) {
-      console.warn('Firestore syncTournament error:', e);
-    }
+  const path = `tournaments/${tournament.id}`;
+  try {
+    await setDoc(doc(db, 'tournaments', tournament.id), tournament, { merge: true });
+  } catch (error) {
+    console.warn('Firestore syncTournament skipped:', error);
   }
 }
 
@@ -172,13 +175,11 @@ export async function syncTournamentToFirestore(tournament: Tournament): Promise
  * Sync fixture to Firestore database
  */
 export async function syncFixtureToFirestore(fixture: MatchFixture): Promise<void> {
-  const { db, live } = initFirebase();
-  if (live && db) {
-    try {
-      await setDoc(doc(db, 'fixtures', fixture.id), fixture, { merge: true });
-    } catch (e) {
-      console.warn('Firestore syncFixture error:', e);
-    }
+  const path = `fixtures/${fixture.id}`;
+  try {
+    await setDoc(doc(db, 'fixtures', fixture.id), fixture, { merge: true });
+  } catch (error) {
+    console.warn('Firestore syncFixture skipped:', error);
   }
 }
 
@@ -186,12 +187,18 @@ export async function syncFixtureToFirestore(fixture: MatchFixture): Promise<voi
  * Sync user profile to Firestore
  */
 export async function syncUserToFirestore(user: UserProfile): Promise<void> {
-  const { db, live } = initFirebase();
-  if (live && db) {
-    try {
-      await setDoc(doc(db, 'users', user.id), user, { merge: true });
-    } catch (e) {
-      console.warn('Firestore syncUser error:', e);
-    }
+  const path = `users/${user.id}`;
+  try {
+    await setDoc(doc(db, 'users', user.id), user, { merge: true });
+  } catch (error) {
+    console.warn('Firestore syncUser skipped:', error);
   }
 }
+
+export const firebaseServices = {
+  app,
+  db,
+  auth,
+  storage,
+  live: true
+};

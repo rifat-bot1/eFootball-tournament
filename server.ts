@@ -84,6 +84,22 @@ async function startServer() {
                           `⚡ Registration is now OPEN in the eFootball Tournament Web App!`;
             break;
           }
+          case 'player_joined_tournament': {
+            messageText = `🎮 <b>NEW PLAYER JOINED TOURNAMENT!</b> 🎮\n` +
+                          `━━━━━━━━━━━━━━━━━━━━━\n` +
+                          `🏆 <b>Tournament:</b> ${data.tournament_title || 'eFootball Tournament'}\n` +
+                          `👤 <b>Player Name:</b> ${data.player_name}\n` +
+                          `🆔 <b>eFootball ID:</b> <code>${data.efootball_id}</code>\n` +
+                          (data.player_email ? `📧 <b>Email:</b> ${data.player_email}\n` : '') +
+                          (data.favorite_club ? `⚽ <b>Club:</b> ${data.favorite_club}\n` : '') +
+                          (data.division ? `🎖️ <b>Division:</b> ${data.division}\n` : '') +
+                          `📊 <b>Slots:</b> ${data.current_players}/${data.max_players} Players\n` +
+                          `💰 <b>Entry Fee:</b> ৳${data.entry_fee || 0} | <b>Prize Pool:</b> ${data.prize_pool || 'TBD'}\n` +
+                          `⏰ <b>Joined At:</b> ${data.joined_at || new Date().toLocaleString()}\n` +
+                          `━━━━━━━━━━━━━━━━━━━━━\n` +
+                          `⚡ Match fixtures will be scheduled soon in @eFootballTournamentBD!`;
+            break;
+          }
           case 'champion_crowned': {
             messageText = `👑👑 <b>WE HAVE A CHAMPION!</b> 👑👑\n` +
                           `━━━━━━━━━━━━━━━━━━━━━\n` +

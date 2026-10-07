@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   AlertCircle, 
   Check, 
   Users, 
   ShieldCheck,
-  Gamepad2
+  Gamepad2,
+  LogOut,
+  CheckCircle2
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
-import { initFirebase } from '../services/firebase';
+import { auth, signInWithGoogle } from '../services/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -29,6 +31,7 @@ interface AuthModalProps {
     favoriteClub?: string;
     role?: 'player' | 'admin';
   }) => void;
+  onLogout?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -37,7 +40,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUser,
   allUsers,
   onSelectUser,
-  onRegister
+  onRegister,
+  onLogout
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   
@@ -51,7 +55,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showQuickSwitch, setShowQuickSwitch] = useState(false);
+
+  // Auto-populate remembered email or eFootball ID when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const savedEmail = localStorage.getItem('efootball_remembered_email');
+      if (savedEmail && !email) {
+        setEmail(savedEmail);
+        const savedId = localStorage.getItem(`efootball_saved_id_${savedEmail.toLowerCase()}`);
+        if (savedId && !efootballId) {
+          setEfootballId(savedId);
+        }
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -72,14 +89,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
 
     try {
-      // 1. Try Firebase Auth if live credentials are active
-      const { auth, live } = initFirebase();
-      if (live && auth) {
+      // 1. Try Firebase Auth
+      if (auth) {
         try {
           await signInWithEmailAndPassword(auth, trimmedEmail, password);
         } catch (firebaseErr: any) {
           console.warn('Firebase signIn notice:', firebaseErr.message);
-          // If Firebase says wrong password, propagate error
           if (firebaseErr.code === 'auth/wrong-password' || firebaseErr.code === 'auth/invalid-credential') {
             setError('Invalid email or password.');
             setIsLoading(false);
@@ -87,6 +102,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           }
         }
       }
+
+      // Remember email permanently
+      localStorage.setItem('efootball_remembered_email', trimmedEmail);
 
       // 2. Check local users database
       const existing = allUsers.find(
@@ -97,7 +115,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onSelectUser(existing);
         onClose();
       } else {
-        setError('No account found with this email. Please click REGISTER to create your profile.');
+        // If logged into Firebase or found previously, create profile
+        const rememberedId = localStorage.getItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`) || 
+          `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        onRegister({
+          name: trimmedEmail.split('@')[0],
+          email: trimmedEmail,
+          efootballId: rememberedId,
+          role: trimmedEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player'
+        });
+        onClose();
       }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
@@ -134,9 +161,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
 
     try {
-      // 1. Register with Firebase Auth if live credentials are active
-      const { auth, live } = initFirebase();
-      if (live && auth) {
+      // 1. Register with Firebase Auth
+      if (auth) {
         try {
           await createUserWithEmailAndPassword(auth, trimmedEmail, password);
         } catch (fbErr: any) {
@@ -148,12 +174,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       }
 
+      // Remember credentials permanently
+      localStorage.setItem('efootball_remembered_email', trimmedEmail);
+      localStorage.setItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`, trimmedEfootballId);
+
       // 2. Create player in tournament system
       onRegister({
         name: trimmedName,
         email: trimmedEmail,
         efootballId: trimmedEfootballId,
-        role: 'player'
+        role: trimmedEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player'
       });
 
       onClose();
@@ -168,36 +198,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       setIsLoading(true);
       setError('');
-      const { auth, live } = initFirebase();
-      if (live && auth) {
-        const provider = new GoogleAuthProvider();
-        const res = await signInWithPopup(auth, provider);
-        if (res.user?.email) {
-          const userEmail = res.user.email;
-          const found = allUsers.find(u => u.email.toLowerCase() === userEmail.toLowerCase());
-          if (found) {
-            onSelectUser(found);
-            onClose();
-            return;
-          }
-          // Register with generated eFootball ID
-          onRegister({
-            name: res.user.displayName || 'Google Player',
-            email: userEmail,
-            efootballId: `EF_${Math.floor(100000 + Math.random() * 900000)}`,
-            role: 'player'
-          });
+      const user = await signInWithGoogle();
+      if (user?.email) {
+        const userEmail = user.email;
+        localStorage.setItem('efootball_remembered_email', userEmail);
+        const found = allUsers.find(u => u.email.toLowerCase() === userEmail.toLowerCase());
+        if (found) {
+          onSelectUser(found);
           onClose();
           return;
         }
+        // Register with generated or remembered eFootball ID
+        const rememberedId = localStorage.getItem(`efootball_saved_id_${userEmail.toLowerCase()}`) || 
+          `EF_${Math.floor(100000 + Math.random() * 900000)}`;
+        localStorage.setItem(`efootball_saved_id_${userEmail.toLowerCase()}`, rememberedId);
+
+        onRegister({
+          name: user.displayName || 'Google Player',
+          email: userEmail,
+          efootballId: rememberedId,
+          role: userEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player'
+        });
+        onClose();
+        return;
       }
     } catch (err: any) {
-      console.warn('Google popup error, falling back:', err.message);
+      console.warn('Google popup error:', err.message);
     } finally {
       setIsLoading(false);
     }
 
-    // Default fast login as Mohammad Rifat
+    // Fallback login
     const userToLogin = allUsers[0];
     onSelectUser(userToLogin);
     onClose();
@@ -229,8 +260,47 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
+        {/* Active Account Status Capsule */}
+        {currentUser && (
+          <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-3 flex items-center justify-between gap-2.5 shadow-sm">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <img
+                src={currentUser.avatarUrl}
+                alt={currentUser.name}
+                className="w-9 h-9 rounded-xl object-cover border border-[#00ff87]/40 flex-shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-white truncate">{currentUser.name}</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded font-bold uppercase bg-[#00ff87]/20 text-[#00ff87]">
+                    Always Saved
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-300 font-mono mt-0.5 truncate">
+                  ID: <span className="text-[#00ff87] font-bold">{currentUser.efootballId}</span>
+                </div>
+              </div>
+            </div>
+
+            {onLogout && (
+              <button
+                type="button"
+                onClick={() => {
+                  onLogout();
+                  setError('');
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-[11px] font-semibold flex-shrink-0 transition"
+                title="Sign out from this ID"
+              >
+                <LogOut className="w-3 h-3" />
+                <span>Switch / Sign Out</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Navigation Tabs (LOGIN / REGISTER) - Exact design from screenshot */}
-        <div className="grid grid-cols-2 gap-2 bg-[#090d14] p-1.5 rounded-2xl my-5 border border-slate-800/60">
+        <div className="grid grid-cols-2 gap-2 bg-[#090d14] p-1.5 rounded-2xl my-4 border border-slate-800/60">
           <button
             type="button"
             onClick={() => { setMode('login'); setError(''); }}
@@ -373,8 +443,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </form>
         )}
 
-        {/* Optional Secondary Actions (Google Sign-In & Quick Player Switch for testing) */}
-        <div className="mt-5 pt-4 border-t border-slate-800/60 space-y-2.5">
+        {/* Optional Secondary Action (Google Sign-In) */}
+        <div className="mt-5 pt-4 border-t border-slate-800/60">
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -400,47 +470,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </svg>
             <span>Continue with Google</span>
           </button>
-
-          {/* Quick Switch Dropdown Toggle */}
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setShowQuickSwitch(!showQuickSwitch)}
-              className="text-[11px] text-slate-500 hover:text-slate-300 transition"
-            >
-              {showQuickSwitch ? 'Hide Quick Switch' : '⚡ Quick Switch Demo Players / Admin'}
-            </button>
-          </div>
-
-          {showQuickSwitch && (
-            <div className="rounded-xl border border-slate-800 bg-[#090d14] p-2 space-y-1 max-h-40 overflow-y-auto">
-              {allUsers.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => {
-                    onSelectUser(u);
-                    onClose();
-                  }}
-                  className={`w-full flex items-center justify-between p-1.5 rounded-lg text-left text-xs transition ${
-                    currentUser.id === u.id 
-                      ? 'bg-slate-800 text-[#00e575]' 
-                      : 'hover:bg-slate-800/60 text-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <img src={u.avatarUrl} alt={u.name} className="h-5 w-5 rounded object-cover" />
-                    <span className="font-medium truncate max-w-[150px]">{u.name}</span>
-                  </div>
-                  <span className={`text-[9px] uppercase px-1 py-0.2 rounded font-bold ${
-                    u.role === 'admin' ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {u.role}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
       </div>

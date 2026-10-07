@@ -215,17 +215,23 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-medium">
-              {filteredEntries.map((entry, idx) => {
-                const rank = idx + 1;
-                const isCurrentUser = entry.playerId === currentUser.id;
+              {filteredEntries.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="py-12 text-center text-slate-500 text-xs">
+                    No leaderboard standings yet. Players and matches will appear here once verified.
+                  </td>
+                </tr>
+              ) : filteredEntries.map((entry, idx) => {
+                  const rank = idx + 1;
+                  const isCurrentUser = entry.playerId === currentUser.id;
 
-                return (
-                  <tr 
-                    key={entry.playerId}
-                    className={`transition-colors hover:bg-slate-800/40 ${
-                      isCurrentUser ? 'bg-[#00ff87]/5 font-semibold text-white' : ''
-                    }`}
-                  >
+                  return (
+                    <tr 
+                      key={entry.playerId}
+                      className={`transition-colors hover:bg-slate-800/40 ${
+                        isCurrentUser ? 'bg-[#00ff87]/5 font-semibold text-white' : ''
+                      }`}
+                    >
                     {/* Rank */}
                     <td className="px-3.5 py-3 text-center font-mono">
                       {rank === 1 ? (

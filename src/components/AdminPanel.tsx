@@ -289,21 +289,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                     {/* Screenshot Preview */}
                     <div className="flex flex-col items-center justify-center bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                      <div className="relative group cursor-pointer w-full max-h-40 overflow-hidden rounded-lg flex items-center justify-center bg-black"
-                           onClick={() => onViewScreenshot(res.screenshotUrl, `${fixture.player1.name} vs ${fixture.player2.name}`)}>
-                        <img 
-                          src={res.screenshotUrl} 
-                          alt="Screenshot Proof"
-                          className="max-h-36 w-auto object-contain rounded"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition gap-1.5 text-xs text-white font-bold">
-                          <Eye className="w-4 h-4 text-[#00ff87]" />
-                          <span>Inspect Full Screen</span>
+                      {res.screenshotUrl ? (
+                        <>
+                          <div className="relative group cursor-pointer w-full max-h-40 overflow-hidden rounded-lg flex items-center justify-center bg-black"
+                               onClick={() => onViewScreenshot(res.screenshotUrl, `${fixture.player1.name} vs ${fixture.player2.name}`)}>
+                            <img 
+                              src={res.screenshotUrl} 
+                              alt="Screenshot Proof"
+                              className="max-h-36 w-auto object-contain rounded"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition gap-1.5 text-xs text-white font-bold">
+                              <Eye className="w-4 h-4 text-[#00ff87]" />
+                              <span>Inspect Full Screen</span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-400 mt-1.5">
+                            Click screenshot to inspect full in-game score &amp; statistics
+                          </span>
+                        </>
+                      ) : (
+                        <div className="py-6 px-4 text-center">
+                          <p className="text-xs font-semibold text-slate-400">No Screenshot Attached</p>
+                          <span className="text-[10px] text-slate-500 mt-1 block">
+                            (Player submitted without screenshot - Optional submission)
+                          </span>
                         </div>
-                      </div>
-                      <span className="text-[10px] text-slate-400 mt-1.5">
-                        Click screenshot to inspect full in-game score &amp; statistics
-                      </span>
+                      )}
                     </div>
 
                   </div>
@@ -359,30 +370,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <select
-              value={selectedTourForFixtures}
-              onChange={(e) => setSelectedTourForFixtures(e.target.value)}
-              className="rounded-xl bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs text-white"
-            >
-              {tournaments.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.title} ({t.registeredPlayerIds.length} players)
-                </option>
-              ))}
-            </select>
+            {tournaments.length === 0 ? (
+              <span className="text-xs text-slate-500 italic">No tournaments created yet</span>
+            ) : (
+              <>
+                <select
+                  value={selectedTourForFixtures}
+                  onChange={(e) => setSelectedTourForFixtures(e.target.value)}
+                  className="rounded-xl bg-slate-950 border border-slate-700 px-3 py-1.5 text-xs text-white"
+                >
+                  {tournaments.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.title} ({t.registeredPlayerIds.length} players)
+                    </option>
+                  ))}
+                </select>
 
-            <button
-              onClick={() => {
-                if (selectedTourForFixtures) {
-                  onGenerateFixtures(selectedTourForFixtures);
-                  confetti({ particleCount: 50, spread: 60 });
-                }
-              }}
-              className="flex items-center gap-1.5 rounded-xl border border-[#00e5ff]/50 bg-sky-950/40 px-3.5 py-1.5 text-xs font-bold text-[#00e5ff] hover:bg-sky-500/20 transition"
-            >
-              <Shuffle className="w-3.5 h-3.5" />
-              <span>Generate Pairings</span>
-            </button>
+                <button
+                  onClick={() => {
+                    if (selectedTourForFixtures) {
+                      onGenerateFixtures(selectedTourForFixtures);
+                      confetti({ particleCount: 50, spread: 60 });
+                    }
+                  }}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#00e5ff]/50 bg-sky-950/40 px-3.5 py-1.5 text-xs font-bold text-[#00e5ff] hover:bg-sky-500/20 transition"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  <span>Generate Pairings</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

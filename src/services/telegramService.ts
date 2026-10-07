@@ -77,7 +77,7 @@ export interface TelegramDispatchResult {
  */
 export async function sendTelegramNotification(
   eventData: {
-    event: 'match_result_approved' | 'tournament_created' | 'champion_crowned' | 'test_ping';
+    event: 'match_result_approved' | 'tournament_created' | 'champion_crowned' | 'player_joined_tournament' | 'test_ping';
     [key: string]: any;
   }
 ): Promise<TelegramDispatchResult> {
@@ -255,6 +255,21 @@ export function formatTelegramMessageHtml(data: any): string {
              `📋 <b>Rules:</b> ${data.rules || '10 Mins, Extra Time OFF, PK ON'}\n` +
              `━━━━━━━━━━━━━━━━━━━━━\n` +
              `⚡ Register now in the eFootball Tournament Web App!`;
+    }
+    case 'player_joined_tournament': {
+      return `🎮 <b>NEW PLAYER JOINED TOURNAMENT!</b> 🎮\n` +
+             `━━━━━━━━━━━━━━━━━━━━━\n` +
+             `🏆 <b>Tournament:</b> ${data.tournament_title || 'eFootball Tournament'}\n` +
+             `👤 <b>Player Name:</b> ${data.player_name}\n` +
+             `🆔 <b>eFootball ID:</b> <code>${data.efootball_id}</code>\n` +
+             (data.player_email ? `📧 <b>Email:</b> ${data.player_email}\n` : '') +
+             (data.favorite_club ? `⚽ <b>Club:</b> ${data.favorite_club}\n` : '') +
+             (data.division ? `🎖️ <b>Division:</b> ${data.division}\n` : '') +
+             `📊 <b>Slots:</b> ${data.current_players}/${data.max_players} Players\n` +
+             `💰 <b>Entry Fee:</b> ৳${data.entry_fee || 0} | <b>Prize:</b> ${data.prize_pool || 'TBD'}\n` +
+             `⏰ <b>Joined At:</b> ${data.joined_at || new Date().toLocaleString()}\n` +
+             `━━━━━━━━━━━━━━━━━━━━━\n` +
+             `⚡ Match fixtures will be scheduled soon in @eFootballTournamentBD!`;
     }
     case 'champion_crowned': {
       return `👑👑 <b>WE HAVE A CHAMPION!</b> 👑👑\n` +

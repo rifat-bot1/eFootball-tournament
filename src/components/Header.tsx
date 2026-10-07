@@ -10,20 +10,21 @@ import {
   User, 
   Flame, 
   Gamepad2,
-  RefreshCw,
   Send,
-  ExternalLink
+  ExternalLink,
+  BookOpen,
+  LogOut
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
 import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
-  activeTab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin';
-  setActiveTab: (tab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'admin') => void;
+  activeTab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'rules' | 'admin';
+  setActiveTab: (tab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'rules' | 'admin') => void;
   currentUser: UserProfile;
   onOpenAuth: () => void;
   pendingReviewsCount: number;
-  onResetData: () => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenAuth,
   pendingReviewsCount,
-  onResetData
+  onLogout
 }) => {
   const [copiedId, setCopiedId] = useState(false);
 
@@ -48,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'fixtures', label: 'Fixtures', icon: Calendar },
     { id: 'submit', label: 'Submit Result', icon: Upload },
     { id: 'leaderboard', label: 'Leaderboard', icon: Table },
+    { id: 'rules', label: 'Rules', icon: BookOpen },
     { 
       id: 'admin', 
       label: 'Admin Desk', 
@@ -152,6 +154,19 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
             </div>
+
+            {onLogout && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLogout();
+                }}
+                className="hidden sm:flex items-center justify-center p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition ml-1"
+                title="Log out and switch account"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
         </div>
@@ -201,17 +216,6 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             );
           })}
-
-          <div className="ml-auto pl-2 flex items-center gap-2">
-            <button
-              onClick={onResetData}
-              className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-slate-500 hover:text-slate-300 hover:bg-slate-900 transition-colors"
-              title="Reset sample tournament fixtures"
-            >
-              <RefreshCw className="w-3 h-3" />
-              <span className="hidden md:inline">Reset Seeds</span>
-            </button>
-          </div>
         </div>
       </nav>
     </header>

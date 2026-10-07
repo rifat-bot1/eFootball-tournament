@@ -172,6 +172,40 @@ switch ($eventType) {
         $messageText .= "👉 {$joinUrl}";
         break;
 
+    // D. Player Joined Tournament
+    case 'player_joined_tournament':
+        $tourTitle = htmlspecialchars($data['tournament_title'] ?? 'eFootball Tournament');
+        $pName = htmlspecialchars($data['player_name'] ?? 'Player');
+        $efootballId = htmlspecialchars($data['efootball_id'] ?? 'N/A');
+        $pEmail = htmlspecialchars($data['player_email'] ?? '');
+        $club = htmlspecialchars($data['favorite_club'] ?? '');
+        $division = htmlspecialchars($data['division'] ?? '');
+        $slots = htmlspecialchars(($data['current_players'] ?? '1') . '/' . ($data['max_players'] ?? '16'));
+        $fee = htmlspecialchars($data['entry_fee'] ?? '0');
+        $prize = htmlspecialchars($data['prize_pool'] ?? 'TBD');
+        $joinedAt = htmlspecialchars($data['joined_at'] ?? date('Y-m-d H:i:s'));
+
+        $messageText = "🎮 <b>NEW PLAYER JOINED TOURNAMENT!</b> 🎮\n";
+        $messageText .= "━━━━━━━━━━━━━━━━━━━━━\n";
+        $messageText .= "🏆 <b>Tournament:</b> {$tourTitle}\n";
+        $messageText .= "👤 <b>Player Name:</b> {$pName}\n";
+        $messageText .= "🆔 <b>eFootball ID:</b> <code>{$efootballId}</code>\n";
+        if (!empty($pEmail)) {
+            $messageText .= "📧 <b>Email:</b> {$pEmail}\n";
+        }
+        if (!empty($club)) {
+            $messageText .= "⚽ <b>Club:</b> {$club}\n";
+        }
+        if (!empty($division)) {
+            $messageText .= "🎖️ <b>Division:</b> {$division}\n";
+        }
+        $messageText .= "📊 <b>Slots:</b> {$slots} Players\n";
+        $messageText .= "💰 <b>Entry Fee:</b> ৳{$fee} | <b>Prize:</b> {$prize}\n";
+        $messageText .= "⏰ <b>Joined At:</b> {$joinedAt}\n";
+        $messageText .= "━━━━━━━━━━━━━━━━━━━━━\n";
+        $messageText .= "⚡ Match fixtures will be scheduled soon in @eFootballTournamentBD!";
+        break;
+
     // C. Tournament Champion Crowned
     case 'champion_crowned':
         $champion = htmlspecialchars($data['champion_name'] ?? 'Champion');
