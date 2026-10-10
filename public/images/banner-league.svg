@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="leagueBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f24" />
+      <stop offset="50%" stop-color="#14113c" />
+      <stop offset="100%" stop-color="#070c1e" />
+    </linearGradient>
+    <linearGradient id="goldPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="50%" stop-color="#00e5ff" />
+      <stop offset="100%" stop-color="#00ff87" />
+    </linearGradient>
+    <filter id="starGlow">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#leagueBg)" />
+
+  <!-- Champions Star Ball Background Elements -->
+  <g opacity="0.25" stroke="#ffffff" stroke-width="2" fill="none">
+    <circle cx="400" cy="225" r="180" />
+    <circle cx="400" cy="225" r="120" />
+    <circle cx="400" cy="225" r="60" />
+  </g>
+
+  <!-- Stars -->
+  <polygon points="400,60 408,82 430,85 413,99 418,121 400,109 382,121 387,99 370,85 392,82" fill="#ffd200" filter="url(#starGlow)" />
+  <polygon points="260,110 266,128 284,130 270,141 274,159 260,149 246,159 250,141 236,130 254,128" fill="#00e5ff" opacity="0.8" />
+  <polygon points="540,110 546,128 564,130 550,141 554,159 540,149 526,159 530,141 516,130 534,128" fill="#00ff87" opacity="0.8" />
+
+  <!-- Center Crest Shield -->
+  <path d="M320 150 H480 V280 C480 340, 400 370, 400 370 C400 370, 320 340, 320 280 Z" fill="#090d21" stroke="url(#goldPurple)" stroke-width="4" filter="url(#starGlow)" />
+  
+  <!-- Ball inside shield -->
+  <circle cx="400" cy="245" r="38" fill="#111836" stroke="#00ff87" stroke-width="3" />
+  <polygon points="400,225 415,237 410,255 390,255 385,237" fill="#00e5ff" />
+
+  <!-- Header Banner -->
+  <rect x="220" y="385" width="360" height="42" rx="10" fill="#050a18" stroke="#00e5ff" stroke-width="2" />
+  <text x="400" y="412" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="3">
+    ROUND-ROBIN LEAGUE
+  </text>
+</svg>

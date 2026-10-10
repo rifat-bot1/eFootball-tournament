@@ -91,13 +91,86 @@ async function startServer() {
                           `👤 <b>Player Name:</b> ${data.player_name}\n` +
                           `🆔 <b>eFootball ID:</b> <code>${data.efootball_id}</code>\n` +
                           (data.player_email ? `📧 <b>Email:</b> ${data.player_email}\n` : '') +
+                          (data.phone ? `📱 <b>Phone:</b> ${data.phone}\n` : '') +
                           (data.favorite_club ? `⚽ <b>Club:</b> ${data.favorite_club}\n` : '') +
                           (data.division ? `🎖️ <b>Division:</b> ${data.division}\n` : '') +
-                          `📊 <b>Slots:</b> ${data.current_players}/${data.max_players} Players\n` +
+                          `📊 <b>Registered Slots:</b> ${data.current_players}/${data.max_players} Players\n` +
                           `💰 <b>Entry Fee:</b> ৳${data.entry_fee || 0} | <b>Prize Pool:</b> ${data.prize_pool || 'TBD'}\n` +
                           `⏰ <b>Joined At:</b> ${data.joined_at || new Date().toLocaleString()}\n` +
                           `━━━━━━━━━━━━━━━━━━━━━\n` +
                           `⚡ Match fixtures will be scheduled soon in @eFootballTournamentBD!`;
+            break;
+          }
+          case 'fixtures_published': {
+            const tourTitle = data.tournament_title || 'eFootball Tournament';
+            const tourFormat = String(data.format || 'Knockout').toUpperCase();
+            const fixtureList = Array.isArray(data.fixtures) ? data.fixtures : [];
+
+            let matchesText = '';
+            if (fixtureList.length > 0) {
+              matchesText = fixtureList.map((f: any, idx: number) => {
+                const num = idx + 1;
+                const round = f.round || `Match ${num}`;
+                const p1 = f.player1_name || 'Player 1';
+                const p1Id = f.player1_efootball_id || 'N/A';
+                const p1Club = f.player1_club ? ` (${f.player1_club})` : '';
+                const p2 = f.player2_name || 'Player 2';
+                const p2Id = f.player2_efootball_id || 'N/A';
+                const p2Club = f.player2_club ? ` (${f.player2_club})` : '';
+                const time = f.scheduled_time || 'TBD';
+
+                return `⚽ <b>[${round}]</b>\n` +
+                       `🔴 <b>${p1}</b>${p1Club}\n` +
+                       `   🆔 ID: <code>${p1Id}</code>\n` +
+                       `       ⚔️ VS ⚔️\n` +
+                       `🔵 <b>${p2}</b>${p2Club}\n` +
+                       `   🆔 ID: <code>${p2Id}</code>\n` +
+                       `⏰ <i>Schedule: ${time}</i>\n`;
+              }).join('\n');
+            } else {
+              matchesText = data.fixtures_summary || 'No matches scheduled yet.';
+            }
+
+            messageText = `📅 <b>OFFICIAL MATCH FIXTURES RELEASED</b> 📅\n` +
+                          `━━━━━━━━━━━━━━━━━━━━━\n` +
+                          `🏆 <b>Tournament:</b> ${tourTitle}\n` +
+                          `⚙️ <b>Format:</b> ${tourFormat}\n` +
+                          `👥 <b>Total Fixtures:</b> ${fixtureList.length} Matches\n` +
+                          `━━━━━━━━━━━━━━━━━━━━━\n` +
+                          `⚔️ <b>MATCH SCHEDULE & OPPONENTS:</b>\n\n` +
+                          `${matchesText}\n` +
+                          `━━━━━━━━━━━━━━━━━━━━━\n` +
+                          `📢 <b>Players Notice:</b>\n` +
+                          `1. Copy your opponent's eFootball ID above\n` +
+                          `2. Send Friend Match request in eFootball mobile\n` +
+                          `3. Play the match within time and submit screenshot in web app!\n\n` +
+                          `⚡ Official Channel: @eFootballTournamentBD`;
+            break;
+          }
+          case 'single_fixture_announced': {
+            const tourTitle = data.tournament_title || 'eFootball Tournament';
+            const round = data.round || 'Tournament Match';
+            const p1 = data.player1_name || 'Player 1';
+            const p1Id = data.player1_efootball_id || 'N/A';
+            const p1Club = data.player1_club ? ` (${data.player1_club})` : '';
+            const p2 = data.player2_name || 'Player 2';
+            const p2Id = data.player2_efootball_id || 'N/A';
+            const p2Club = data.player2_club ? ` (${data.player2_club})` : '';
+            const time = data.scheduled_time || 'TBD';
+
+            messageText = `⚔️ <b>UPCOMING MATCH FIXTURE</b> ⚔️\n` +
+                          `━━━━━━━━━━━━━━━━━━━━━\n` +
+                          `🏆 <b>Tournament:</b> ${tourTitle}\n` +
+                          `📍 <b>Round:</b> ${round}\n` +
+                          `⏰ <b>Scheduled Time:</b> ${time}\n\n` +
+                          `🔴 <b>${p1}</b>${p1Club}\n` +
+                          `   🆔 eFootball ID: <code>${p1Id}</code>\n\n` +
+                          `       ⚡ VS ⚡\n\n` +
+                          `🔵 <b>${p2}</b>${p2Club}\n` +
+                          `   🆔 eFootball ID: <code>${p2Id}</code>\n` +
+                          `━━━━━━━━━━━━━━━━━━━━━\n` +
+                          `🎮 Add opponent ID in eFootball and play within scheduled time!\n` +
+                          `📢 Official Channel: @eFootballTournamentBD`;
             break;
           }
           case 'champion_crowned': {

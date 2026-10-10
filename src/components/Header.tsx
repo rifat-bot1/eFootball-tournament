@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
 import { PWAInstallButton } from './PWAInstallButton';
+import { handleAvatarError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
 
 interface HeaderProps {
   activeTab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'rules' | 'admin';
@@ -128,6 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
               src={currentUser.avatarUrl} 
               alt={currentUser.name} 
               className="h-7 w-7 rounded-lg object-cover border border-[#00ff87]/40 group-hover:scale-105 transition-transform"
+              onError={(e) => handleAvatarError(e, currentUser.role === 'admin' ? DEFAULT_ADMIN_AVATAR : DEFAULT_PLAYER_AVATAR)}
             />
             <div className="text-left hidden sm:block">
               <div className="flex items-center gap-1.5">

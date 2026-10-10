@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, ZoomIn, ZoomOut, RotateCcw, Download, Eye, ExternalLink } from 'lucide-react';
+import { SAMPLE_MATCH_SCREENSHOT } from '../services/mockData';
 
 interface ScreenshotInspectModalProps {
   isOpen: boolean;
@@ -85,6 +86,12 @@ export const ScreenshotInspectModal: React.FC<ScreenshotInspectModalProps> = ({
               src={imageUrl} 
               alt="Match result screenshot"
               className="max-h-[75vh] max-w-full rounded-xl shadow-2xl object-contain border border-slate-800"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== SAMPLE_MATCH_SCREENSHOT) {
+                  target.src = SAMPLE_MATCH_SCREENSHOT;
+                }
+              }}
             />
           </div>
         </div>

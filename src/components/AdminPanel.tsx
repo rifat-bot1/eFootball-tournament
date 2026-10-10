@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { MatchFixture, Tournament, UserProfile } from '../types/tournament';
 import confetti from 'canvas-confetti';
+import { handleAvatarError, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
+import { broadcastFixturesToTelegram } from '../services/tournamentService';
 
 interface AdminPanelProps {
   currentUser: UserProfile;
@@ -48,6 +50,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [rejectionModalFixture, setRejectionModalFixture] = useState<MatchFixture | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [isBroadcastingFixtures, setIsBroadcastingFixtures] = useState(false);
   const [recentTelegramNotification, setRecentTelegramNotification] = useState<{
     text: string;
     status: 'success' | 'failed' | 'simulated';
@@ -249,9 +252,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <img 
-                            src={fixture.player1.avatarUrl} 
+                            src={fixture.player1.avatarUrl || DEFAULT_PLAYER_AVATAR} 
                             alt={fixture.player1.name} 
                             className="h-8 w-8 rounded-lg object-cover border border-slate-700"
+                            onError={(e) => handleAvatarError(e, DEFAULT_PLAYER_AVATAR)}
                           />
                           <div>
                             <span className="text-xs font-bold text-white block">{fixture.player1.name}</span>
@@ -266,9 +270,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <div className="flex items-center justify-between border-t border-slate-800/80 pt-2.5">
                         <div className="flex items-center gap-2">
                           <img 
-                            src={fixture.player2.avatarUrl} 
+                            src={fixture.player2.avatarUrl || DEFAULT_PLAYER_AVATAR} 
                             alt={fixture.player2.name} 
                             className="h-8 w-8 rounded-lg object-cover border border-slate-700"
+                            onError={(e) => handleAvatarError(e, DEFAULT_PLAYER_AVATAR)}
                           />
                           <div>
                             <span className="text-xs font-bold text-white block">{fixture.player2.name}</span>
@@ -387,16 +392,50 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </select>
 
                 <button
+                  type="button"
                   onClick={() => {
                     if (selectedTourForFixtures) {
                       onGenerateFixtures(selectedTourForFixtures);
                       confetti({ particleCount: 50, spread: 60 });
+                      setRecentTelegramNotification({
+                        text: 'Fixtures generated & broadcasting to Telegram (@eFootballTournamentBD)!',
+                        status: 'success'
+                      });
                     }
                   }}
                   className="flex items-center gap-1.5 rounded-xl border border-[#00e5ff]/50 bg-sky-950/40 px-3.5 py-1.5 text-xs font-bold text-[#00e5ff] hover:bg-sky-500/20 transition"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
                   <span>Generate Pairings</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (selectedTourForFixtures) {
+                      try {
+                        setIsBroadcastingFixtures(true);
+                        const res = await broadcastFixturesToTelegram(selectedTourForFixtures);
+                        setRecentTelegramNotification({
+                          text: res.message || 'Fixtures posted to Telegram channel!',
+                          status: res.success ? 'success' : 'failed'
+                        });
+                      } catch (err: any) {
+                        setRecentTelegramNotification({
+                          text: err.message || 'Failed to broadcast fixtures',
+                          status: 'failed'
+                        });
+                      } finally {
+                        setIsBroadcastingFixtures(false);
+                      }
+                    }
+                  }}
+                  disabled={isBroadcastingFixtures}
+                  className="flex items-center gap-1.5 rounded-xl border border-sky-500/50 bg-gradient-to-r from-sky-600 to-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:brightness-110 transition disabled:opacity-50"
+                  title="Post fixtures to Telegram (@eFootballTournamentBD)"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isBroadcastingFixtures ? 'Posting...' : 'Post to Telegram'}</span>
                 </button>
               </>
             )}

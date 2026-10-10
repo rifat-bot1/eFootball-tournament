@@ -16,17 +16,35 @@ import {
   ShieldAlert,
   SlidersHorizontal,
   Plus,
-  BookOpen
+  BookOpen,
+  LogOut,
+  Send,
+  ExternalLink,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Tournament, UserProfile, LeaderboardEntry } from '../types/tournament';
 import confetti from 'canvas-confetti';
-import { Send, ExternalLink } from 'lucide-react';
+import { JoinTournamentModal } from './JoinTournamentModal';
+import { EditBannerModal } from './EditBannerModal';
+import { handleAvatarError, handleBannerError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR, DEFAULT_BANNER } from '../utils/imageUtils';
 
 interface DashboardViewProps {
   tournaments: Tournament[];
   currentUser: UserProfile;
   leaderboard: LeaderboardEntry[];
-  onJoinTournament: (tournamentId: string) => void;
+  onJoinTournament: (
+    tournamentId: string,
+    playerData?: {
+      name: string;
+      efootballId: string;
+      email: string;
+      phone?: string;
+      favoriteClub: string;
+      division: string;
+    }
+  ) => Promise<any>;
+  onLeaveTournament?: (tournamentId: string) => void;
+  onUpdateTournamentBanner?: (tournamentId: string, bannerUrl: string) => void;
   onNavigateToFixtures: (tournamentId?: string) => void;
   onNavigateToSubmit: () => void;
   onOpenCreateModal: () => void;
@@ -38,6 +56,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   currentUser,
   leaderboard,
   onJoinTournament,
+  onLeaveTournament,
+  onUpdateTournamentBanner,
   onNavigateToFixtures,
   onNavigateToSubmit,
   onOpenCreateModal,
@@ -45,6 +65,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const [copiedId, setCopiedId] = useState(false);
   const [joinedAlert, setJoinedAlert] = useState<string | null>(null);
+  const [joiningTournament, setJoiningTournament] = useState<Tournament | null>(null);
+  const [editingBannerTour, setEditingBannerTour] = useState<Tournament | null>(null);
 
   // Find user's leaderboard position
   const userRankIndex = leaderboard.findIndex(e => e.playerId === currentUser.id);
@@ -57,18 +79,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setTimeout(() => setCopiedId(false), 2000);
   };
 
-  const handleJoin = (tour: Tournament) => {
-    try {
-      onJoinTournament(tour.id);
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.7 }
-      });
-      setJoinedAlert(`Successfully joined "${tour.title}"! Details sent to Telegram channel.`);
-      setTimeout(() => setJoinedAlert(null), 4000);
-    } catch (err: any) {
-      alert(err.message);
+  const handleConfirmJoin = async (
+    tournamentId: string,
+    playerData: {
+      name: string;
+      efootballId: string;
+      email: string;
+      phone?: string;
+      favoriteClub: string;
+      division: string;
+    }
+  ) => {
+    const res = await onJoinTournament(tournamentId, playerData);
+    confetti({
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.7 }
+    });
+    setJoinedAlert(
+      `🎉 Successfully joined "${res?.tournament?.title || 'Tournament'}"! Player details broadcasted to @eFootballTournamentBD Telegram channel.`
+    );
+    setTimeout(() => setJoinedAlert(null), 5000);
+  };
+
+  const handleLeave = (tour: Tournament) => {
+    if (window.confirm(`Are you sure you want to leave "${tour.title}"? You can re-join anytime.`)) {
+      onLeaveTournament?.(tour.id);
+      setJoinedAlert(`Left "${tour.title}". You can join again whenever you are ready!`);
+      setTimeout(() => setJoinedAlert(null), 3000);
     }
   };
 
@@ -96,6 +134,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 src={currentUser.avatarUrl} 
                 alt={currentUser.name} 
                 className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border-2 border-[#00ff87] shadow-lg shadow-[#00ff87]/20"
+                onError={(e) => handleAvatarError(e, currentUser.role === 'admin' ? DEFAULT_ADMIN_AVATAR : DEFAULT_PLAYER_AVATAR)}
               />
               <span className="absolute -bottom-1 -right-1 rounded-full bg-slate-950 px-2 py-0.5 text-[10px] font-black uppercase text-[#00ff87] border border-[#00ff87]/40">
                 {currentUser.division}
@@ -295,13 +334,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 glass-card-hover"
                 >
                   {/* Banner Image */}
-                  <div className="relative h-36 w-full overflow-hidden bg-slate-950">
+                  <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-950">
                     <img 
                       src={tour.bannerUrl} 
                       alt={tour.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80" 
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      onError={(e) => handleBannerError(e, DEFAULT_BANNER)}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent pointer-events-none" />
                     
                     {/* Status Badges */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
@@ -320,10 +360,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
 
                     {/* Registered count pill */}
-                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-md bg-black/70 backdrop-blur-md px-2 py-0.5 text-[11px] font-semibold text-white">
+                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-md bg-black/75 backdrop-blur-md px-2 py-0.5 text-[11px] font-semibold text-white border border-slate-700/60">
                       <Users className="w-3 h-3 text-[#00ff87]" />
                       <span>{tour.registeredPlayerIds.length}/{tour.maxPlayers}</span>
                     </div>
+
+                    {/* Admin Quick Action: Change Banner */}
+                    {currentUser.role === 'admin' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingBannerTour(tour);
+                        }}
+                        className="absolute bottom-3 right-3 rounded-lg bg-black/80 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:text-white hover:bg-slate-900 border border-slate-700/80 flex items-center gap-1.5 shadow-lg transition"
+                        title="Change tournament banner image"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-[#00ff87]" />
+                        <span>Change Banner</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Content */}
@@ -362,29 +418,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
 
                     {/* Action Button */}
-                    <div className="pt-2 flex items-center gap-2">
+                    <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       {isJoined ? (
-                        <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-2.5 text-xs font-bold text-[#00ff87]">
-                          <Check className="w-4 h-4" />
-                          <span>Registered Player</span>
-                        </div>
+                        <>
+                          <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-2 px-2.5 text-xs font-bold text-[#00ff87]">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Registered</span>
+                          </div>
+                          
+                          {/* Re-notify / Update details button */}
+                          <button
+                            onClick={() => setJoiningTournament(tour)}
+                            className="inline-flex items-center justify-center gap-1 rounded-xl border border-sky-500/40 bg-sky-950/40 px-2.5 py-2 text-[11px] font-bold text-sky-300 hover:bg-sky-500/20 hover:text-white transition"
+                            title="Update player info or resend details to Telegram"
+                          >
+                            <Send className="w-3 h-3 text-sky-400" />
+                            <span>Re-notify Telegram</span>
+                          </button>
+
+                          {/* Leave button to allow re-testing registration */}
+                          {onLeaveTournament && (
+                            <button
+                              onClick={() => handleLeave(tour)}
+                              className="inline-flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-950/30 p-2 text-rose-400 hover:bg-rose-500/20 hover:text-rose-200 transition"
+                              title="Leave tournament (un-register to test again)"
+                            >
+                              <LogOut className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </>
                       ) : (
                         <button
-                          onClick={() => handleJoin(tour)}
+                          onClick={() => setJoiningTournament(tour)}
                           disabled={isFull}
                           className={`flex-1 rounded-xl py-2.5 text-xs font-black uppercase tracking-wider transition ${
                             isFull
                               ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-[#00ff87] to-[#00e5ff] text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95'
+                              : 'bg-gradient-to-r from-[#00ff87] to-[#00e5ff] text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5'
                           }`}
                         >
-                          {isFull ? 'Tournament Full' : 'Join Tournament'}
+                          <Send className="w-3.5 h-3.5" />
+                          <span>{isFull ? 'Tournament Full' : 'Join & Notify Telegram'}</span>
                         </button>
                       )}
 
                       <button
                         onClick={() => onNavigateToFixtures(tour.id)}
-                        className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5 text-slate-300 hover:text-white hover:border-[#00ff87]/50 transition"
+                        className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5 text-slate-300 hover:text-white hover:border-[#00ff87]/50 transition flex items-center justify-center"
                         title="View Fixtures & Standings"
                       >
                         <ArrowRight className="w-4 h-4" />
@@ -411,6 +491,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <li>Upload the screenshot under <strong>Submit Result</strong>. Once verified by an Admin, the points table and Telegram notification are updated instantly!</li>
         </ul>
       </div>
+
+      {/* Join Tournament Details & Telegram Broadcast Modal */}
+      <JoinTournamentModal
+        isOpen={Boolean(joiningTournament)}
+        onClose={() => setJoiningTournament(null)}
+        tournament={joiningTournament}
+        currentUser={currentUser}
+        onConfirmJoin={handleConfirmJoin}
+      />
+
+      {/* Edit Tournament Banner Modal */}
+      <EditBannerModal
+        isOpen={Boolean(editingBannerTour)}
+        onClose={() => setEditingBannerTour(null)}
+        tournament={editingBannerTour}
+        onUpdateBanner={(tourId, newBanner) => {
+          onUpdateTournamentBanner?.(tourId, newBanner);
+          setJoinedAlert('Tournament banner updated successfully!');
+          setTimeout(() => setJoinedAlert(null), 3000);
+        }}
+      />
 
     </div>
   );

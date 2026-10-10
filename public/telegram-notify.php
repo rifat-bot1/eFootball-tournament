@@ -221,6 +221,80 @@ switch ($eventType) {
         $messageText .= "Congratulations to all participants for a magnificent tournament! 🎉🔥";
         break;
 
+    // E. Match Fixtures Published
+    case 'fixtures_published':
+        $tourTitle = htmlspecialchars($data['tournament_title'] ?? 'eFootball Tournament');
+        $tourFormat = htmlspecialchars(strtoupper($data['format'] ?? 'Knockout'));
+        $fixtureList = is_array($data['fixtures'] ?? null) ? $data['fixtures'] : [];
+
+        $matchesText = '';
+        if (!empty($fixtureList)) {
+            foreach ($fixtureList as $idx => $f) {
+                $num = $idx + 1;
+                $round = htmlspecialchars($f['round'] ?? "Match {$num}");
+                $p1 = htmlspecialchars($f['player1_name'] ?? 'Player 1');
+                $p1Id = htmlspecialchars($f['player1_efootball_id'] ?? 'N/A');
+                $p1Club = !empty($f['player1_club']) ? " (" . htmlspecialchars($f['player1_club']) . ")" : '';
+                $p2 = htmlspecialchars($f['player2_name'] ?? 'Player 2');
+                $p2Id = htmlspecialchars($f['player2_efootball_id'] ?? 'N/A');
+                $p2Club = !empty($f['player2_club']) ? " (" . htmlspecialchars($f['player2_club']) . ")" : '';
+                $time = htmlspecialchars($f['scheduled_time'] ?? 'TBD');
+
+                $matchesText .= "⚽ <b>[{$round}]</b>\n";
+                $matchesText .= "🔴 <b>{$p1}</b>{$p1Club}\n";
+                $matchesText .= "   🆔 ID: <code>{$p1Id}</code>\n";
+                $matchesText .= "       ⚔️ VS ⚔️\n";
+                $matchesText .= "🔵 <b>{$p2}</b>{$p2Club}\n";
+                $matchesText .= "   🆔 ID: <code>{$p2Id}</code>\n";
+                $matchesText .= "⏰ <i>Schedule: {$time}</i>\n\n";
+            }
+        } else {
+            $matchesText = "No matches scheduled yet.\n\n";
+        }
+
+        $messageText = "📅 <b>OFFICIAL MATCH FIXTURES RELEASED</b> 📅\n";
+        $messageText .= "━━━━━━━━━━━━━━━━━━━━━\n";
+        $messageText .= "🏆 <b>Tournament:</b> {$tourTitle}\n";
+        $messageText .= "⚙️ <b>Format:</b> {$tourFormat}\n";
+        $messageText .= "👥 <b>Total Fixtures:</b> " . count($fixtureList) . " Matches\n";
+        $messageText .= "━━━━━━━━━━━━━━━━━━━━━\n";
+        $messageText .= "⚔️ <b>MATCH SCHEDULE & OPPONENTS:</b>\n\n";
+        $messageText .= $matchesText;
+        $messageText .= "━━━━━━━━━━━━━━━━━━━━━\n";
+        $messageText .= "📢 <b>Players Notice:</b>\n";
+        $messageText .= "1. Copy your opponent's eFootball ID above\n";
+        $messageText .= "2. Send Friend Match request in eFootball mobile\n";
+        $messageText .= "3. Play within time & submit score screenshot in app!\n\n";
+        $messageText .= "⚡ Official Channel: @eFootballTournamentBD";
+        break;
+
+    // F. Single Match Fixture Announced
+    case 'single_fixture_announced':
+        $tourTitle = htmlspecialchars($data['tournament_title'] ?? 'eFootball Tournament');
+        $round = htmlspecialchars($data['round'] ?? 'Tournament Match');
+        $p1 = htmlspecialchars($data['player1_name'] ?? 'Player 1');
+        $p1Id = htmlspecialchars($data['player1_efootball_id'] ?? 'N/A');
+        $p1Club = !empty($data['player1_club']) ? " (" . htmlspecialchars($data['player1_club']) . ")" : '';
+        $p2 = htmlspecialchars($data['player2_name'] ?? 'Player 2');
+        $p2Id = htmlspecialchars($data['player2_efootball_id'] ?? 'N/A');
+        $p2Club = !empty($data['player2_club']) ? " (" . htmlspecialchars($data['player2_club']) . ")" : '';
+        $time = htmlspecialchars($data['scheduled_time'] ?? 'TBD');
+
+        $messageText = "⚔️ <b>UPCOMING MATCH FIXTURE</b> ⚔️\n";
+        $messageText .= "━━━━━━━━━━━━━━━━━━━━━\n";
+        $messageText .= "🏆 <b>Tournament:</b> {$tourTitle}\n";
+        $messageText .= "📍 <b>Round:</b> {$round}\n";
+        $messageText .= "⏰ <b>Scheduled Time:</b> {$time}\n\n";
+        $messageText .= "🔴 <b>{$p1}</b>{$p1Club}\n";
+        $messageText .= "   🆔 eFootball ID: <code>{$p1Id}</code>\n\n";
+        $messageText .= "       ⚡ VS ⚡\n\n";
+        $messageText .= "🔵 <b>{$p2}</b>{$p2Club}\n";
+        $messageText .= "   🆔 eFootball ID: <code>{$p2Id}</code>\n";
+        $messageText .= "━━━━━━━━━━━━━━━━━━━━━\n";
+        $messageText .= "🎮 Add opponent ID in eFootball and play within scheduled time!\n";
+        $messageText .= "📢 Official Channel: @eFootballTournamentBD";
+        break;
+
     // D. Test Ping
     case 'test_ping':
     default:

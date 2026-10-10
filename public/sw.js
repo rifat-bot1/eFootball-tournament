@@ -1,10 +1,16 @@
 // eFootball Tournament Arena - Service Worker
-const CACHE_NAME = 'efootball-arena-v2';
+const CACHE_NAME = 'efootball-arena-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icon.svg'
+  './icon.svg',
+  './images/avatar-admin.svg',
+  './images/avatar-player.svg',
+  './images/banner-stadium.svg',
+  './images/banner-trophy.svg',
+  './images/banner-esports.svg',
+  './images/banner-league.svg'
 ];
 
 self.addEventListener('install', (event) => {

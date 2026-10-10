@@ -12,6 +12,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { LeaderboardEntry, Tournament, UserProfile } from '../types/tournament';
+import { handleAvatarError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
 
 interface LeaderboardViewProps {
   leaderboard: LeaderboardEntry[];
@@ -96,9 +97,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               <Medal className="w-3.5 h-3.5 text-slate-300" /> 2nd Place
             </div>
             <img 
-              src={top3[1].avatarUrl} 
+              src={top3[1].avatarUrl || DEFAULT_PLAYER_AVATAR} 
               alt={top3[1].playerName}
               className="h-16 w-16 rounded-2xl object-cover border-2 border-slate-400 mb-2 shadow-lg"
+              onError={(e) => handleAvatarError(e, DEFAULT_PLAYER_AVATAR)}
             />
             <h4 className="text-sm font-bold text-white truncate max-w-[160px]">{top3[1].playerName}</h4>
             <span className="text-[11px] text-slate-400 font-mono">ID: {top3[1].efootballId}</span>
@@ -124,9 +126,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             </div>
             <div className="relative mb-2">
               <img 
-                src={top3[0].avatarUrl} 
+                src={top3[0].avatarUrl || DEFAULT_ADMIN_AVATAR} 
                 alt={top3[0].playerName}
                 className="h-20 w-20 rounded-2xl object-cover border-3 border-amber-400 shadow-xl"
+                onError={(e) => handleAvatarError(e, DEFAULT_ADMIN_AVATAR)}
               />
               <Crown className="w-6 h-6 text-amber-400 absolute -top-4 left-1/2 -translate-x-1/2 drop-shadow" />
             </div>
@@ -150,9 +153,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               <Medal className="w-3.5 h-3.5 text-amber-600" /> 3rd Place
             </div>
             <img 
-              src={top3[2].avatarUrl} 
+              src={top3[2].avatarUrl || DEFAULT_PLAYER_AVATAR} 
               alt={top3[2].playerName}
               className="h-16 w-16 rounded-2xl object-cover border-2 border-amber-700 mb-2 shadow-lg"
+              onError={(e) => handleAvatarError(e, DEFAULT_PLAYER_AVATAR)}
             />
             <h4 className="text-sm font-bold text-white truncate max-w-[160px]">{top3[2].playerName}</h4>
             <span className="text-[11px] text-slate-400 font-mono">ID: {top3[2].efootballId}</span>
@@ -255,9 +259,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <img 
-                          src={entry.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=user'} 
+                          src={entry.avatarUrl || DEFAULT_PLAYER_AVATAR} 
                           alt={entry.playerName} 
                           className="h-8 w-8 rounded-lg object-cover border border-slate-700"
+                          onError={(e) => handleAvatarError(e, DEFAULT_PLAYER_AVATAR)}
                         />
                         <div>
                           <div className="flex items-center gap-1.5">

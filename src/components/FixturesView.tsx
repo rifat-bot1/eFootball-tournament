@@ -13,9 +13,13 @@ import {
   Search,
   ExternalLink,
   ShieldCheck,
-  Gamepad2
+  Gamepad2,
+  Send,
+  CheckCircle2
 } from 'lucide-react';
 import { MatchFixture, Tournament, UserProfile } from '../types/tournament';
+import { handleAvatarError, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
+import { broadcastFixturesToTelegram, broadcastSingleFixtureToTelegram } from '../services/tournamentService';
 
 interface FixturesViewProps {
   fixtures: MatchFixture[];
@@ -39,11 +43,58 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
   const [filterType, setFilterType] = useState<'all' | 'my' | 'pending' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isBroadcastingAll, setIsBroadcastingAll] = useState(false);
+  const [postingFixtureId, setPostingFixtureId] = useState<string | null>(null);
+  const [broadcastAlert, setBroadcastAlert] = useState<{ text: string; isError?: boolean } | null>(null);
 
   const copyId = (id: string) => {
     navigator.clipboard.writeText(id);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleBroadcastAllFixtures = async () => {
+    const targetTourId = selectedTournamentId || (fixtures.length > 0 ? fixtures[0].tournamentId : null);
+    if (!targetTourId) {
+      setBroadcastAlert({ text: 'Please select a tournament with scheduled fixtures to broadcast.', isError: true });
+      return;
+    }
+
+    try {
+      setIsBroadcastingAll(true);
+      const res = await broadcastFixturesToTelegram(targetTourId);
+      setBroadcastAlert({
+        text: res.message || 'Match fixtures posted to Telegram channel (@eFootballTournamentBD)!',
+        isError: !res.success
+      });
+      setTimeout(() => setBroadcastAlert(null), 6000);
+    } catch (err: any) {
+      setBroadcastAlert({
+        text: err.message || 'Failed to post fixtures to Telegram.',
+        isError: true
+      });
+    } finally {
+      setIsBroadcastingAll(false);
+    }
+  };
+
+  const handleBroadcastSingle = async (fixtureId: string) => {
+    try {
+      setPostingFixtureId(fixtureId);
+      const res = await broadcastSingleFixtureToTelegram(fixtureId);
+      setBroadcastAlert({
+        text: res.message || 'Match fixture posted to Telegram channel!',
+        isError: !res.success
+      });
+      setTimeout(() => setBroadcastAlert(null), 5000);
+    } catch (err: any) {
+      setBroadcastAlert({
+        text: err.message || 'Failed to post match fixture to Telegram.',
+        isError: true
+      });
+    } finally {
+      setPostingFixtureId(null);
+    }
   };
 
   // Filter fixtures by tournament
@@ -150,6 +201,71 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
         </div>
       )}
 
+      {/* Broadcast Alert Banner if recently dispatched */}
+      {broadcastAlert && (
+        <div className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 text-xs transition ${
+          broadcastAlert.isError
+            ? 'bg-rose-950/40 border border-rose-500/40 text-rose-200'
+            : 'bg-sky-950/40 border border-sky-500/40 text-sky-200'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {broadcastAlert.isError ? (
+              <XCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            )}
+            <span><strong>Telegram Broadcast:</strong> {broadcastAlert.text}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a
+              href="https://t.me/eFootballTournamentBD"
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-[#00ff87] hover:underline flex items-center gap-1"
+            >
+              <span>View Channel</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <button
+              onClick={() => setBroadcastAlert(null)}
+              className="text-slate-400 hover:text-white"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Broadcast Fixtures to Telegram Banner */}
+      {tournamentFixtures.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r from-sky-950/60 via-slate-900 to-slate-900 border border-sky-500/30 p-3.5 sm:p-4 rounded-2xl shadow-lg shadow-sky-950/20">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-sky-500/20 p-2 text-sky-400 border border-sky-500/30">
+              <Send className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                <span>Post Fixtures to Telegram Channel</span>
+                <span className="text-[10px] text-sky-300 font-normal">(@eFootballTournamentBD)</span>
+              </h4>
+              <p className="text-[11px] text-slate-400">
+                Publish full match schedule, opponent pairings &amp; eFootball IDs directly to your Telegram channel.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleBroadcastAllFixtures}
+            disabled={isBroadcastingAll}
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2 text-xs font-black uppercase text-white shadow-lg shadow-sky-500/20 hover:brightness-110 active:scale-95 transition disabled:opacity-50 flex-shrink-0"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>{isBroadcastingAll ? 'Posting Fixtures...' : 'Post Fixtures to Telegram'}</span>
+          </button>
+        </div>
+      )}
+
       {/* Fixtures List */}
       {filteredFixtures.length === 0 ? (
         <div className="text-center py-12 rounded-2xl border border-dashed border-slate-800 bg-slate-900/30">
@@ -220,11 +336,12 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
                     <div className="col-span-3 text-left space-y-1.5">
                       <div className="flex items-center gap-2">
                         <img 
-                          src={fixture.player1.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=p1'} 
+                          src={fixture.player1.avatarUrl || DEFAULT_PLAYER_AVATAR} 
                           alt={fixture.player1.name} 
                           className={`h-9 w-9 sm:h-11 sm:w-11 rounded-xl object-cover border ${
                             isUserP1 ? 'border-[#00ff87]' : 'border-slate-700'
                           }`}
+                          onError={(e) => handleAvatarError(e, DEFAULT_PLAYER_AVATAR)}
                         />
                         <div className="min-w-0">
                           <p className={`text-xs sm:text-sm font-bold truncate ${
@@ -289,11 +406,12 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
                           </p>
                         </div>
                         <img 
-                          src={fixture.player2.avatarUrl || 'https://api.dicebear.com/7.x/bottts/svg?seed=p2'} 
+                          src={fixture.player2.avatarUrl || DEFAULT_PLAYER_AVATAR} 
                           alt={fixture.player2.name} 
                           className={`h-9 w-9 sm:h-11 sm:w-11 rounded-xl object-cover border ${
                             isUserP2 ? 'border-[#00ff87]' : 'border-slate-700'
                           }`}
+                          onError={(e) => handleAvatarError(e, DEFAULT_PLAYER_AVATAR)}
                         />
                       </div>
 
@@ -323,23 +441,33 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
 
                   {/* Actions Bar */}
                   <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                    {/* Screenshot view button if submitted */}
-                    {fixture.result?.screenshotUrl ? (
+                    <div className="flex items-center gap-2">
+                      {/* Screenshot view button if submitted */}
+                      {fixture.result?.screenshotUrl && (
+                        <button
+                          onClick={() => onViewScreenshot(
+                            fixture.result!.screenshotUrl, 
+                            `${fixture.player1.name} vs ${fixture.player2.name}`
+                          )}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-[#00ff87] hover:border-[#00ff87]/40 transition"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Proof</span>
+                        </button>
+                      )}
+
+                      {/* Post Match to Telegram Button */}
                       <button
-                        onClick={() => onViewScreenshot(
-                          fixture.result!.screenshotUrl, 
-                          `${fixture.player1.name} vs ${fixture.player2.name}`
-                        )}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-[#00ff87] hover:border-[#00ff87]/40 transition"
+                        type="button"
+                        onClick={() => handleBroadcastSingle(fixture.id)}
+                        disabled={postingFixtureId === fixture.id}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/40 px-2.5 py-1 text-xs font-bold text-sky-300 hover:bg-sky-500/20 hover:text-white transition disabled:opacity-50"
+                        title="Post this match fixture to Telegram channel"
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>View Proof</span>
+                        <Send className="w-3 h-3 text-sky-400" />
+                        <span>{postingFixtureId === fixture.id ? 'Posting...' : 'Telegram'}</span>
                       </button>
-                    ) : (
-                      <span className="text-[11px] text-slate-500">
-                        {isMyMatch ? 'Your match' : 'Scheduled pairing'}
-                      </span>
-                    )}
+                    </div>
 
                     {/* Submit Result CTA if not yet approved */}
                     {fixture.status !== 'approved' && (

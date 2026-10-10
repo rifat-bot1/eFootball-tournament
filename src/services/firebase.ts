@@ -146,6 +146,9 @@ export async function uploadMatchScreenshot(
   matchId: string, 
   uploaderId: string
 ): Promise<string> {
+  if (!dataUrlOrFile || !dataUrlOrFile.trim()) {
+    return '';
+  }
   if (dataUrlOrFile.startsWith('data:')) {
     try {
       const storageRef = ref(storage, `match_screenshots/${matchId}_${uploaderId}_${Date.now()}.png`);

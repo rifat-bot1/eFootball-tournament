@@ -65,13 +65,28 @@ export function getCurrentUser(): UserProfile {
     const raw = localStorage.getItem(STORAGE_PERMANENT_USER) || localStorage.getItem(STORAGE_CURRENT_USER);
     if (raw) {
       const parsed: UserProfile = JSON.parse(raw);
-      if (parsed && parsed.id && parsed.name && parsed.efootballId) {
+      if (parsed && parsed.id && parsed.name) {
+        // Fix outdated or broken Unsplash avatars
+        if (parsed.avatarUrl?.includes('unsplash.com') || !parsed.avatarUrl) {
+          parsed.avatarUrl = parsed.role === 'admin' ? './images/avatar-admin.svg' : './images/avatar-player.svg';
+        }
+        // Ensure eFootball ID is restored from permanent email mapping if available
+        const savedId = (parsed.email && localStorage.getItem(`efootball_saved_id_${parsed.email.toLowerCase()}`)) ||
+          localStorage.getItem('efootball_saved_id_last') ||
+          parsed.efootballId;
+        if (savedId) {
+          parsed.efootballId = savedId;
+        }
         return parsed;
       }
     }
   } catch (e) {}
   const defaultUser = SEED_PLAYERS[0];
   try {
+    const savedId = localStorage.getItem('efootball_saved_id_last');
+    if (savedId) {
+      defaultUser.efootballId = savedId;
+    }
     localStorage.setItem(STORAGE_PERMANENT_USER, JSON.stringify(defaultUser));
     localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(defaultUser));
   } catch (e) {}
@@ -83,14 +98,18 @@ export function getCurrentUser(): UserProfile {
  */
 export function setCurrentUser(user: UserProfile): void {
   try {
+    // Remember eFootball ID specifically for this email and globally
+    if (user.efootballId) {
+      localStorage.setItem('efootball_saved_id_last', user.efootballId);
+      if (user.email) {
+        localStorage.setItem(`efootball_saved_id_${user.email.toLowerCase()}`, user.efootballId);
+      }
+    }
     localStorage.setItem(STORAGE_PERMANENT_USER, JSON.stringify(user));
     localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(user));
-    // Remember eFootball ID specifically for this email
-    if (user.email && user.efootballId) {
-      localStorage.setItem(`efootball_saved_id_${user.email.toLowerCase()}`, user.efootballId);
-    }
+
     const users = getUsers();
-    const idx = users.findIndex(u => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
+    const idx = users.findIndex(u => u.id === user.id || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
     if (idx >= 0) {
       users[idx] = { ...users[idx], ...user };
     } else {
@@ -138,7 +157,7 @@ export function getOrCreateUserProfileForAuth(
     name: displayName || authEmail.split('@')[0],
     email: authEmail,
     efootballId: rememberedId,
-    avatarUrl: photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName || authEmail)}`,
+    avatarUrl: photoURL || (authEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? './images/avatar-admin.svg' : './images/avatar-player.svg'),
     role: authEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player',
     favoriteClub: 'eFootball FC',
     rating: 1500,
@@ -158,8 +177,13 @@ export function getTournaments(): Tournament[] {
     const raw = localStorage.getItem(STORAGE_TOURNAMENTS);
     if (raw) {
       const parsed: Tournament[] = JSON.parse(raw);
-      // Filter out demo tournaments
-      const cleaned = parsed.filter(t => !['tour_01', 'tour_02', 'tour_03'].includes(t.id));
+      // Filter out demo tournaments & upgrade legacy banners
+      const cleaned = parsed
+        .filter(t => !['tour_01', 'tour_02', 'tour_03'].includes(t.id))
+        .map(t => ({
+          ...t,
+          bannerUrl: (!t.bannerUrl || t.bannerUrl.includes('unsplash.com')) ? './images/banner-stadium.svg' : t.bannerUrl
+        }));
       localStorage.setItem(STORAGE_TOURNAMENTS, JSON.stringify(cleaned));
       return cleaned;
     }
@@ -177,8 +201,20 @@ export function getFixtures(): MatchFixture[] {
     const raw = localStorage.getItem(STORAGE_FIXTURES);
     if (raw) {
       const parsed: MatchFixture[] = JSON.parse(raw);
-      // Filter out demo fixtures
-      const cleaned = parsed.filter(f => !f.id.startsWith('fix_10') && !f.id.startsWith('fix_20') && !f.id.startsWith('fix_30'));
+      // Filter out demo fixtures & clean avatars
+      const cleaned = parsed
+        .filter(f => !f.id.startsWith('fix_10') && !f.id.startsWith('fix_20') && !f.id.startsWith('fix_30'))
+        .map(f => ({
+          ...f,
+          player1: {
+            ...f.player1,
+            avatarUrl: (!f.player1.avatarUrl || f.player1.avatarUrl.includes('unsplash.com')) ? './images/avatar-admin.svg' : f.player1.avatarUrl
+          },
+          player2: {
+            ...f.player2,
+            avatarUrl: (!f.player2.avatarUrl || f.player2.avatarUrl.includes('unsplash.com')) ? './images/avatar-player.svg' : f.player2.avatarUrl
+          }
+        }));
       localStorage.setItem(STORAGE_FIXTURES, JSON.stringify(cleaned));
       return cleaned;
     }
@@ -207,13 +243,14 @@ export function registerUser(data: {
     throw new Error('User with this email already exists.');
   }
 
+  const isMasterAdmin = data.email.toLowerCase() === 'rfrifatbs@gmail.com';
   const newUser: UserProfile = {
     id: `user_${Date.now()}`,
     name: data.name,
     email: data.email,
     efootballId: data.efootballId.trim(),
-    avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(data.name)}`,
-    role: data.role || 'player',
+    avatarUrl: isMasterAdmin || data.role === 'admin' ? './images/avatar-admin.svg' : './images/avatar-player.svg',
+    role: data.role || (isMasterAdmin ? 'admin' : 'player'),
     favoriteClub: data.favoriteClub || 'FC Barcelona',
     rating: 1500,
     division: 'Division 3',
@@ -241,9 +278,20 @@ export function loginUser(email: string): UserProfile {
 }
 
 /**
- * Join Tournament
+ * Join Tournament and send real-time notification to Telegram
  */
-export function joinTournament(tournamentId: string, user: UserProfile): Tournament {
+export async function joinTournament(
+  tournamentId: string, 
+  user: UserProfile,
+  customDetails?: {
+    name?: string;
+    efootballId?: string;
+    email?: string;
+    phone?: string;
+    favoriteClub?: string;
+    division?: string;
+  }
+): Promise<{ tournament: Tournament; telegramResult: any }> {
   const tournaments = getTournaments();
   const index = tournaments.findIndex(t => t.id === tournamentId);
   if (index === -1) throw new Error('Tournament not found');
@@ -256,30 +304,82 @@ export function joinTournament(tournamentId: string, user: UserProfile): Tournam
     throw new Error('This tournament is already full!');
   }
 
+  // If user updated their details when joining, sync to profile & persistence
+  if (customDetails) {
+    const updatedUser: UserProfile = {
+      ...user,
+      name: customDetails.name || user.name,
+      efootballId: customDetails.efootballId || user.efootballId,
+      email: customDetails.email || user.email,
+      favoriteClub: customDetails.favoriteClub || user.favoriteClub,
+      division: customDetails.division || user.division
+    };
+    setCurrentUser(updatedUser);
+    user = updatedUser;
+  }
+
   tour.registeredPlayerIds.push(user.id);
   tournaments[index] = { ...tour };
   saveTournaments(tournaments);
   syncTournamentToFirestore(tour).catch(() => {});
 
-  // Send real-time notification to Telegram channel with player & tournament details
-  sendTelegramNotification({
-    event: 'player_joined_tournament',
-    tournament_title: tour.title,
-    player_name: user.name,
-    efootball_id: user.efootballId,
-    player_email: user.email,
-    favorite_club: user.favoriteClub,
-    division: user.division,
-    current_players: tour.registeredPlayerIds.length,
-    max_players: tour.maxPlayers,
-    entry_fee: (tour as any).entryFee || 0,
-    prize_pool: tour.prizePool,
-    joined_at: new Date().toLocaleString()
-  }).catch((err) => {
+  // Send real-time notification to Telegram channel with ALL player & tournament details
+  let telegramResult: any = null;
+  try {
+    telegramResult = await sendTelegramNotification({
+      event: 'player_joined_tournament',
+      tournament_title: tour.title,
+      player_name: user.name,
+      efootball_id: user.efootballId,
+      player_email: user.email,
+      phone: customDetails?.phone,
+      favorite_club: user.favoriteClub,
+      division: user.division,
+      current_players: tour.registeredPlayerIds.length,
+      max_players: tour.maxPlayers,
+      entry_fee: (tour as any).entryFee || 0,
+      prize_pool: tour.prizePool,
+      joined_at: new Date().toLocaleString()
+    });
+  } catch (err: any) {
     console.warn('Failed dispatching player join notification to Telegram:', err);
-  });
+    telegramResult = { success: false, message: err?.message || 'Telegram dispatch error' };
+  }
 
+  return { tournament: tour, telegramResult };
+}
+
+/**
+ * Leave Tournament (Allows players or test users to unregister)
+ */
+export function leaveTournament(tournamentId: string, userId: string): Tournament {
+  const tournaments = getTournaments();
+  const index = tournaments.findIndex(t => t.id === tournamentId);
+  if (index === -1) throw new Error('Tournament not found');
+
+  const tour = tournaments[index];
+  tour.registeredPlayerIds = tour.registeredPlayerIds.filter(id => id !== userId);
+  tournaments[index] = { ...tour };
+  saveTournaments(tournaments);
+  syncTournamentToFirestore(tour).catch(() => {});
   return tour;
+}
+
+/**
+ * Update Tournament Banner Image
+ */
+export function updateTournamentBanner(tournamentId: string, bannerUrl: string): Tournament {
+  const tournaments = getTournaments();
+  const index = tournaments.findIndex(t => t.id === tournamentId);
+  if (index === -1) throw new Error('Tournament not found');
+
+  tournaments[index] = {
+    ...tournaments[index],
+    bannerUrl
+  };
+  saveTournaments(tournaments);
+  syncTournamentToFirestore(tournaments[index]).catch(() => {});
+  return tournaments[index];
 }
 
 /**
@@ -293,10 +393,10 @@ export async function createTournament(data: {
   prizePool: string;
   rules: TournamentRules;
   bannerUrl?: string;
+  entryFee?: number;
   autoGenerateFixtures?: boolean;
 }): Promise<Tournament> {
   const tournaments = getTournaments();
-  const currentUser = getCurrentUser();
 
   const newTour: Tournament = {
     id: `tour_${Date.now()}`,
@@ -305,13 +405,17 @@ export async function createTournament(data: {
     format: data.format,
     status: 'upcoming',
     maxPlayers: Number(data.maxPlayers),
-    registeredPlayerIds: [currentUser.id],
+    registeredPlayerIds: [], // Open for players to register
     prizePool: data.prizePool,
     rules: data.rules,
     startDate: new Date(Date.now() + 86400000 * 2).toISOString(),
-    bannerUrl: data.bannerUrl || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1000&q=80',
+    bannerUrl: data.bannerUrl || './images/banner-stadium.svg',
     createdAt: new Date().toISOString()
   };
+
+  if (data.entryFee) {
+    (newTour as any).entryFee = data.entryFee;
+  }
 
   tournaments.unshift(newTour);
   saveTournaments(tournaments);
@@ -325,6 +429,7 @@ export async function createTournament(data: {
       format: newTour.format,
       max_players: newTour.maxPlayers,
       prize_pool: newTour.prizePool,
+      entry_fee: data.entryFee || 0,
       rules: `${newTour.rules.matchLength}, Extra Time: ${newTour.rules.extraTime ? 'ON' : 'OFF'}, PK: ${newTour.rules.penalties ? 'ON' : 'OFF'}`,
       app_url: window.location.href
     });
@@ -423,7 +528,101 @@ export function generateFixturesForTournament(tournamentId: string): MatchFixtur
   const updatedFixtures = [...existingFixtures, ...newFixtures];
   saveFixtures(updatedFixtures);
 
+  // Automatically trigger Telegram broadcast for newly generated fixtures
+  broadcastFixturesToTelegram(tournamentId).catch(err => {
+    console.warn('Auto Telegram broadcast for fixtures failed:', err);
+  });
+
   return newFixtures;
+}
+
+/**
+ * Broadcast entire tournament fixtures to Telegram channel (@eFootballTournamentBD)
+ */
+export async function broadcastFixturesToTelegram(
+  tournamentId: string
+): Promise<{ success: boolean; message: string; telegramResult: any }> {
+  const tournaments = getTournaments();
+  const tour = tournaments.find(t => t.id === tournamentId);
+  if (!tour) throw new Error('Tournament not found');
+
+  const fixtures = getFixtures().filter(f => f.tournamentId === tournamentId);
+  if (fixtures.length === 0) {
+    throw new Error('No fixtures found for this tournament. Please generate fixtures first.');
+  }
+
+  const payload = {
+    event: 'fixtures_published' as const,
+    tournament_title: tour.title,
+    format: tour.format,
+    fixtures: fixtures.map(f => ({
+      round: f.round,
+      player1_name: f.player1.name,
+      player1_efootball_id: f.player1.efootballId,
+      player1_club: f.player1.favoriteClub,
+      player2_name: f.player2.name,
+      player2_efootball_id: f.player2.efootballId,
+      player2_club: f.player2.favoriteClub,
+      scheduled_time: f.scheduledTime
+    }))
+  };
+
+  try {
+    const telegramResult = await sendTelegramNotification(payload);
+    return {
+      success: telegramResult.success,
+      message: telegramResult.message,
+      telegramResult
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || 'Failed to dispatch to Telegram',
+      telegramResult: null
+    };
+  }
+}
+
+/**
+ * Broadcast a single match fixture to Telegram channel (@eFootballTournamentBD)
+ */
+export async function broadcastSingleFixtureToTelegram(
+  fixtureId: string
+): Promise<{ success: boolean; message: string; telegramResult: any }> {
+  const fixtures = getFixtures();
+  const fixture = fixtures.find(f => f.id === fixtureId);
+  if (!fixture) throw new Error('Fixture not found');
+
+  const tournaments = getTournaments();
+  const tour = tournaments.find(t => t.id === fixture.tournamentId);
+
+  const payload = {
+    event: 'single_fixture_announced' as const,
+    tournament_title: tour?.title || 'eFootball Tournament',
+    round: fixture.round,
+    player1_name: fixture.player1.name,
+    player1_efootball_id: fixture.player1.efootballId,
+    player1_club: fixture.player1.favoriteClub,
+    player2_name: fixture.player2.name,
+    player2_efootball_id: fixture.player2.efootballId,
+    player2_club: fixture.player2.favoriteClub,
+    scheduled_time: fixture.scheduledTime
+  };
+
+  try {
+    const telegramResult = await sendTelegramNotification(payload);
+    return {
+      success: telegramResult.success,
+      message: telegramResult.message,
+      telegramResult
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || 'Failed to dispatch to Telegram',
+      telegramResult: null
+    };
+  }
 }
 
 /**
@@ -445,12 +644,20 @@ export async function submitMatchResult(
   const fixture = fixtures[index];
   const currentUser = getCurrentUser();
 
-  // Upload screenshot to Firebase Storage or format
-  const finalScreenshotUrl = await uploadMatchScreenshot(
-    submission.screenshotUrlOrBase64,
-    fixture.id,
-    currentUser.id
-  );
+  // Upload screenshot to Firebase Storage if provided (100% Optional)
+  let finalScreenshotUrl = '';
+  if (submission.screenshotUrlOrBase64 && submission.screenshotUrlOrBase64.trim()) {
+    try {
+      finalScreenshotUrl = await uploadMatchScreenshot(
+        submission.screenshotUrlOrBase64,
+        fixture.id,
+        currentUser.id
+      );
+    } catch (uploadErr) {
+      console.warn('Screenshot upload fallback, saving as local/base64 URL:', uploadErr);
+      finalScreenshotUrl = submission.screenshotUrlOrBase64;
+    }
+  }
 
   const resultData: MatchResult = {
     player1Score: Number(submission.player1Score),

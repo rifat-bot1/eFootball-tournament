@@ -6,11 +6,11 @@ import {
   Users, 
   ShieldCheck,
   Gamepad2,
-  LogOut,
   CheckCircle2
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
 import { auth, signInWithGoogle } from '../services/firebase';
+import { handleAvatarError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -56,17 +56,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Auto-populate remembered email or eFootball ID when modal opens
+  // Reset errors and password when modal opens
   useEffect(() => {
     if (isOpen) {
-      const savedEmail = localStorage.getItem('efootball_remembered_email');
-      if (savedEmail && !email) {
-        setEmail(savedEmail);
-        const savedId = localStorage.getItem(`efootball_saved_id_${savedEmail.toLowerCase()}`);
-        if (savedId && !efootballId) {
-          setEfootballId(savedId);
-        }
-      }
+      setError('');
+      setPassword('');
     }
   }, [isOpen]);
 
@@ -112,12 +106,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       );
 
       if (existing) {
+        if (existing.efootballId) {
+          localStorage.setItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`, existing.efootballId);
+          localStorage.setItem('efootball_saved_id_last', existing.efootballId);
+        }
         onSelectUser(existing);
         onClose();
       } else {
         // If logged into Firebase or found previously, create profile
         const rememberedId = localStorage.getItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`) || 
+          localStorage.getItem('efootball_saved_id_last') ||
           `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        localStorage.setItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`, rememberedId);
+        localStorage.setItem('efootball_saved_id_last', rememberedId);
         onRegister({
           name: trimmedEmail.split('@')[0],
           email: trimmedEmail,
@@ -204,14 +205,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         localStorage.setItem('efootball_remembered_email', userEmail);
         const found = allUsers.find(u => u.email.toLowerCase() === userEmail.toLowerCase());
         if (found) {
+          if (found.efootballId) {
+            localStorage.setItem(`efootball_saved_id_${userEmail.toLowerCase()}`, found.efootballId);
+            localStorage.setItem('efootball_saved_id_last', found.efootballId);
+          }
           onSelectUser(found);
           onClose();
           return;
         }
         // Register with generated or remembered eFootball ID
         const rememberedId = localStorage.getItem(`efootball_saved_id_${userEmail.toLowerCase()}`) || 
-          `EF_${Math.floor(100000 + Math.random() * 900000)}`;
+          localStorage.getItem('efootball_saved_id_last') ||
+          `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
         localStorage.setItem(`efootball_saved_id_${userEmail.toLowerCase()}`, rememberedId);
+        localStorage.setItem('efootball_saved_id_last', rememberedId);
 
         onRegister({
           name: user.displayName || 'Google Player',
@@ -259,45 +266,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <X className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Active Account Status Capsule */}
-        {currentUser && (
-          <div className="mt-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-3 flex items-center justify-between gap-2.5 shadow-sm">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.name}
-                className="w-9 h-9 rounded-xl object-cover border border-[#00ff87]/40 flex-shrink-0"
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-white truncate">{currentUser.name}</span>
-                  <span className="text-[9px] px-1 py-0.2 rounded font-bold uppercase bg-[#00ff87]/20 text-[#00ff87]">
-                    Always Saved
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-300 font-mono mt-0.5 truncate">
-                  ID: <span className="text-[#00ff87] font-bold">{currentUser.efootballId}</span>
-                </div>
-              </div>
-            </div>
-
-            {onLogout && (
-              <button
-                type="button"
-                onClick={() => {
-                  onLogout();
-                  setError('');
-                }}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-[11px] font-semibold flex-shrink-0 transition"
-                title="Sign out from this ID"
-              >
-                <LogOut className="w-3 h-3" />
-                <span>Switch / Sign Out</span>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Navigation Tabs (LOGIN / REGISTER) - Exact design from screenshot */}
         <div className="grid grid-cols-2 gap-2 bg-[#090d14] p-1.5 rounded-2xl my-4 border border-slate-800/60">

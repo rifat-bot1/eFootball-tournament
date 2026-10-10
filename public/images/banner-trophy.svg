@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="trophySky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#050814" />
+      <stop offset="60%" stop-color="#0a1226" />
+      <stop offset="100%" stop-color="#02040a" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe259" />
+      <stop offset="40%" stop-color="#ffa751" />
+      <stop offset="80%" stop-color="#ffd200" />
+      <stop offset="100%" stop-color="#f7971e" />
+    </linearGradient>
+    <linearGradient id="silverBase" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <filter id="goldGlow">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#trophySky)" />
+
+  <!-- Background Rays -->
+  <polygon points="400,220 300,0 350,0" fill="#ffd200" opacity="0.08" />
+  <polygon points="400,220 450,0 500,0" fill="#ffd200" opacity="0.08" />
+  <polygon points="400,220 150,0 200,0" fill="#00ff87" opacity="0.08" />
+  <polygon points="400,220 600,0 650,0" fill="#00e5ff" opacity="0.08" />
+
+  <!-- Confetti Elements -->
+  <rect x="180" y="80" width="8" height="16" rx="2" fill="#00ff87" transform="rotate(25 180 80)" opacity="0.7" />
+  <rect x="250" y="140" width="6" height="14" rx="2" fill="#ffd200" transform="rotate(-35 250 140)" opacity="0.8" />
+  <rect x="620" y="90" width="8" height="18" rx="2" fill="#00e5ff" transform="rotate(45 620 90)" opacity="0.8" />
+  <rect x="550" y="150" width="7" height="15" rx="2" fill="#ff4757" transform="rotate(-15 550 150)" opacity="0.7" />
+  <circle cx="320" cy="90" r="4" fill="#ffd200" opacity="0.6" />
+  <circle cx="480" cy="80" r="5" fill="#00ff87" opacity="0.6" />
+
+  <!-- Center Glow -->
+  <circle cx="400" cy="220" r="140" fill="#ffd200" opacity="0.15" filter="url(#goldGlow)" />
+
+  <!-- Trophy Illustration (Hero Center) -->
+  <g id="trophy" filter="url(#goldGlow)">
+    <!-- Base Pedestal -->
+    <polygon points="330,370 470,370 490,410 310,410" fill="url(#silverBase)" stroke="#ffd200" stroke-width="2" />
+    <rect x="340" y="340" width="120" height="30" rx="4" fill="url(#goldGrad)" />
+    <rect x="375" y="290" width="50" height="50" fill="url(#goldGrad)" />
+    
+    <!-- Cup Body -->
+    <path d="M310 130 H490 C490 230, 440 290, 400 290 C360 290, 310 230, 310 130 Z" fill="url(#goldGrad)" />
+    
+    <!-- Cup Handles -->
+    <path d="M310 150 C240 150, 240 240, 330 250" fill="none" stroke="url(#goldGrad)" stroke-width="18" stroke-linecap="round" />
+    <path d="M490 150 C560 150, 560 240, 470 250" fill="none" stroke="url(#goldGrad)" stroke-width="18" stroke-linecap="round" />
+
+    <!-- Crown / Star on Cup -->
+    <polygon points="400,165 408,185 430,187 414,201 419,222 400,210 381,222 386,201 370,187 392,185" fill="#ffffff" opacity="0.9" />
+
+    <!-- Ribbon Trim -->
+    <path d="M360 290 L330 390 L360 380 L380 400 L375 290" fill="#00ff87" opacity="0.9" />
+    <path d="M440 290 L470 390 L440 380 L420 400 L425 290" fill="#00e5ff" opacity="0.9" />
+  </g>
+
+  <!-- Title Badge -->
+  <g>
+    <rect x="220" y="30" width="360" height="54" rx="14" fill="#081020" fill-opacity="0.85" stroke="#ffd200" stroke-width="2" />
+    <text x="400" y="58" font-family="system-ui, sans-serif" font-size="18" font-weight="900" fill="#ffd200" text-anchor="middle" letter-spacing="2">
+      CHAMPIONSHIP CUP
+    </text>
+    <text x="400" y="74" font-family="monospace, sans-serif" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="3">
+      KNOCKOUT GLORY &amp; PRIZE POOL
+    </text>
+  </g>
+</svg>

@@ -182,8 +182,8 @@ export const ResultSubmissionModal: React.FC<ResultSubmissionModalProps> = ({
               <h2 className="text-base sm:text-lg font-black text-white">
                 Submit Match Result
               </h2>
-              <p className="text-[11px] text-slate-400">
-                Upload screenshot for Admin & Leaderboard verification
+              <p className="text-[11px] text-[#00ff87]">
+                স্কোর দিন • ফটো দেওয়া সম্পূর্ণ অপশনাল (ছবি ছাড়াও সাবমিট করা যাবে)
               </p>
             </div>
           </div>
@@ -427,12 +427,12 @@ export const ResultSubmissionModal: React.FC<ResultSubmissionModalProps> = ({
               {isSubmitting ? (
                 <>
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
-                  <span>Uploading to Storage...</span>
+                  <span>{screenshotData ? 'Uploading & Submitting...' : 'Submitting Score...'}</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Submit for Review</span>
+                  <span>{screenshotData ? 'Submit Result (With Screenshot)' : 'Submit Score (Without Photo / ছবি ছাড়া)'}</span>
                 </>
               )}
             </button>

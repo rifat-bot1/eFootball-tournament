@@ -11,6 +11,8 @@ import {
   getUsers, 
   setCurrentUser, 
   joinTournament, 
+  leaveTournament,
+  updateTournamentBanner,
   createTournament, 
   generateFixturesForTournament, 
   submitMatchResult, 
@@ -94,8 +96,21 @@ export default function App() {
   const pendingReviewsCount = fixtures.filter(f => f.status === 'submitted').length;
 
   // Handlers
-  const handleJoinTournament = (tournamentId: string) => {
-    const updated = joinTournament(tournamentId, currentUser);
+  const handleJoinTournament = async (tournamentId: string, customDetails?: any) => {
+    const res = await joinTournament(tournamentId, currentUser, customDetails);
+    setTournaments(getTournaments());
+    setCurrentUserState(getCurrentUser());
+    setAllUsers(getUsers());
+    return res;
+  };
+
+  const handleLeaveTournament = (tournamentId: string) => {
+    leaveTournament(tournamentId, currentUser.id);
+    setTournaments(getTournaments());
+  };
+
+  const handleUpdateTournamentBanner = (tournamentId: string, bannerUrl: string) => {
+    updateTournamentBanner(tournamentId, bannerUrl);
     setTournaments(getTournaments());
   };
 
@@ -184,6 +199,8 @@ export default function App() {
             currentUser={currentUser}
             leaderboard={leaderboard}
             onJoinTournament={handleJoinTournament}
+            onLeaveTournament={handleLeaveTournament}
+            onUpdateTournamentBanner={handleUpdateTournamentBanner}
             onNavigateToFixtures={(tourId) => {
               if (tourId) setSelectedTournamentId(tourId);
               setActiveTab('fixtures');
