@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { MatchFixture, Tournament, UserProfile } from '../types/tournament';
 import { handleAvatarError, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
-import { broadcastFixturesToTelegram, broadcastSingleFixtureToTelegram } from '../services/tournamentService';
+import { broadcastFixturesToTelegram, broadcastSingleFixtureToTelegram, isUserAdmin } from '../services/tournamentService';
 
 interface FixturesViewProps {
   fixtures: MatchFixture[];
@@ -237,8 +237,8 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
         </div>
       )}
 
-      {/* Broadcast Fixtures to Telegram Banner */}
-      {tournamentFixtures.length > 0 && (
+      {/* Broadcast Fixtures to Telegram Banner (Admin Only) */}
+      {isUserAdmin(currentUser) && tournamentFixtures.length > 0 && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r from-sky-950/60 via-slate-900 to-slate-900 border border-sky-500/30 p-3.5 sm:p-4 rounded-2xl shadow-lg shadow-sky-950/20">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-sky-500/20 p-2 text-sky-400 border border-sky-500/30">
@@ -435,7 +435,7 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
                   {/* Rejection Note if rejected */}
                   {fixture.status === 'rejected' && fixture.result?.adminVerdict?.rejectionReason && (
                     <div className="mt-3 rounded-lg bg-rose-950/40 border border-rose-800/60 p-2 text-[11px] text-rose-300">
-                      <strong>Admin Note:</strong> {fixture.result.adminVerdict.rejectionReason}
+                      <strong>Verification Note:</strong> {fixture.result.adminVerdict.rejectionReason}
                     </div>
                   )}
 
@@ -456,17 +456,19 @@ export const FixturesView: React.FC<FixturesViewProps> = ({
                         </button>
                       )}
 
-                      {/* Post Match to Telegram Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleBroadcastSingle(fixture.id)}
-                        disabled={postingFixtureId === fixture.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/40 px-2.5 py-1 text-xs font-bold text-sky-300 hover:bg-sky-500/20 hover:text-white transition disabled:opacity-50"
-                        title="Post this match fixture to Telegram channel"
-                      >
-                        <Send className="w-3 h-3 text-sky-400" />
-                        <span>{postingFixtureId === fixture.id ? 'Posting...' : 'Telegram'}</span>
-                      </button>
+                      {/* Post Match to Telegram Button (Admin Only) */}
+                      {isUserAdmin(currentUser) && (
+                        <button
+                          type="button"
+                          onClick={() => handleBroadcastSingle(fixture.id)}
+                          disabled={postingFixtureId === fixture.id}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/40 px-2.5 py-1 text-xs font-bold text-sky-300 hover:bg-sky-500/20 hover:text-white transition disabled:opacity-50"
+                          title="Post this match fixture to Telegram channel"
+                        >
+                          <Send className="w-3 h-3 text-sky-400" />
+                          <span>{postingFixtureId === fixture.id ? 'Posting...' : 'Telegram'}</span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Submit Result CTA if not yet approved */}

@@ -1,19 +1,48 @@
 import { Tournament, MatchFixture, UserProfile } from '../types/tournament';
 
-// Admin profile only (No demo players)
+export const ADMIN_EMAIL = 'rfrifatbs@gmail.com';
+export const ADMIN_PASSWORD = 'Rifat@11';
+
+export function isUserAdmin(user?: UserProfile | null): boolean {
+  if (!user) return false;
+  return Boolean(
+    user.email &&
+    user.email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() &&
+    user.role === 'admin'
+  );
+}
+
+// Default guest player profile for all unauthenticated/normal users
+export const DEFAULT_GUEST_PLAYER: UserProfile = {
+  id: 'guest_player',
+  name: 'Player',
+  email: '',
+  efootballId: 'PLAYER_7',
+  avatarUrl: './images/avatar-player.svg',
+  role: 'player',
+  favoriteClub: 'FC Barcelona',
+  rating: 1200,
+  division: 'Division 3',
+  createdAt: '2026-01-01'
+};
+
+// Official Admin profile (Accessible ONLY via login with rfrifatbs@gmail.com and password Rifat@11)
+export const OFFICIAL_ADMIN_PROFILE: UserProfile = {
+  id: 'user_admin_01',
+  name: 'Mohammad Rifat (Admin)',
+  email: 'rfrifatbs@gmail.com',
+  efootballId: '6595302089',
+  avatarUrl: './images/avatar-admin.svg',
+  role: 'admin',
+  favoriteClub: 'Real Madrid',
+  rating: 1980,
+  division: 'Division 1',
+  createdAt: '2026-01-01'
+};
+
 export const SEED_PLAYERS: UserProfile[] = [
-  {
-    id: 'user_admin_01',
-    name: 'Mohammad Rifat (Admin)',
-    email: 'rfrifatbs@gmail.com',
-    efootballId: '6595302089',
-    avatarUrl: './images/avatar-admin.svg',
-    role: 'admin',
-    favoriteClub: 'Real Madrid',
-    rating: 1980,
-    division: 'Division 1',
-    createdAt: '2026-01-01'
-  }
+  DEFAULT_GUEST_PLAYER,
+  OFFICIAL_ADMIN_PROFILE
 ];
 
 // Empty tournaments (No demo tournaments)
@@ -21,6 +50,162 @@ export const SEED_TOURNAMENTS: Tournament[] = [];
 
 // Empty fixtures (No demo fixtures)
 export const SEED_FIXTURES: MatchFixture[] = [];
+
+// Historical completed tournaments archive
+export const HISTORICAL_COMPLETED_TOURNAMENTS: Tournament[] = [
+  {
+    id: 'tour_hist_01',
+    title: 'eFootball BD Super Cup - Season 1',
+    description: 'The inaugural championship tournament of the eFootball Arena community, featuring top mobile contenders.',
+    format: 'knockout',
+    status: 'completed',
+    maxPlayers: 8,
+    registeredPlayerIds: ['user_admin_01', 'guest_player'],
+    rules: {
+      matchLength: '10 Mins',
+      extraTime: true,
+      penalties: true,
+      playerCondition: 'Excellent',
+      injuries: false,
+      substitutions: 5
+    },
+    prizePool: '2,500 eFootball Coins + Champion Trophy',
+    startDate: '2025-12-15',
+    bannerUrl: './images/banner-trophy.svg',
+    winnerId: 'user_admin_01',
+    winnerName: 'Mohammad Rifat',
+    createdAt: '2025-12-01'
+  },
+  {
+    id: 'tour_hist_02',
+    title: 'Winter Masters League 2025',
+    description: 'Intense round-robin league stage where consistency and tactics determined the ultimate division champion.',
+    format: 'league',
+    status: 'completed',
+    maxPlayers: 6,
+    registeredPlayerIds: ['guest_player', 'user_admin_01'],
+    rules: {
+      matchLength: '10 Mins',
+      extraTime: false,
+      penalties: false,
+      playerCondition: 'Random',
+      injuries: true,
+      substitutions: 5
+    },
+    prizePool: '1,500 eFootball Coins',
+    startDate: '2025-11-20',
+    bannerUrl: './images/banner-esports.svg',
+    winnerId: 'guest_player',
+    winnerName: 'Player',
+    createdAt: '2025-11-10'
+  }
+];
+
+// Historical completed match fixtures archive
+export const HISTORICAL_COMPLETED_FIXTURES: MatchFixture[] = [
+  {
+    id: 'fix_hist_101',
+    tournamentId: 'tour_hist_01',
+    round: 'Grand Final',
+    player1: {
+      id: 'user_admin_01',
+      name: 'Mohammad Rifat',
+      efootballId: '6595302089',
+      avatarUrl: './images/avatar-admin.svg',
+      favoriteClub: 'Real Madrid'
+    },
+    player2: {
+      id: 'guest_player',
+      name: 'Player',
+      efootballId: 'PLAYER_7',
+      avatarUrl: './images/avatar-player.svg',
+      favoriteClub: 'FC Barcelona'
+    },
+    scheduledTime: '2025-12-20 20:00',
+    status: 'approved',
+    result: {
+      player1Score: 3,
+      player2Score: 1,
+      submittedBy: 'user_admin_01',
+      submittedByName: 'Mohammad Rifat',
+      screenshotUrl: './images/banner-stadium.svg',
+      submittedAt: '2025-12-20T20:25:00.000Z',
+      notes: 'Final whistle thrilling match, 3-1 victory to secure the championship.',
+      adminVerdict: {
+        approvedBy: 'Tournament Desk',
+        verifiedAt: '2025-12-20T20:30:00.000Z'
+      }
+    }
+  },
+  {
+    id: 'fix_hist_102',
+    tournamentId: 'tour_hist_01',
+    round: 'Semi-Finals',
+    player1: {
+      id: 'user_admin_01',
+      name: 'Mohammad Rifat',
+      efootballId: '6595302089',
+      avatarUrl: './images/avatar-admin.svg',
+      favoriteClub: 'Real Madrid'
+    },
+    player2: {
+      id: 'guest_player_2',
+      name: 'Striker King',
+      efootballId: '882-941-201',
+      avatarUrl: './images/avatar-player.svg',
+      favoriteClub: 'Manchester City'
+    },
+    scheduledTime: '2025-12-18 19:00',
+    status: 'approved',
+    result: {
+      player1Score: 2,
+      player2Score: 0,
+      submittedBy: 'user_admin_01',
+      submittedByName: 'Mohammad Rifat',
+      screenshotUrl: './images/banner-trophy.svg',
+      submittedAt: '2025-12-18T19:20:00.000Z',
+      notes: 'Clean sheet in the semi final match.',
+      adminVerdict: {
+        approvedBy: 'Tournament Desk',
+        verifiedAt: '2025-12-18T19:25:00.000Z'
+      }
+    }
+  },
+  {
+    id: 'fix_hist_201',
+    tournamentId: 'tour_hist_02',
+    round: 'Matchday 5',
+    player1: {
+      id: 'guest_player',
+      name: 'Player',
+      efootballId: 'PLAYER_7',
+      avatarUrl: './images/avatar-player.svg',
+      favoriteClub: 'FC Barcelona'
+    },
+    player2: {
+      id: 'user_admin_01',
+      name: 'Mohammad Rifat',
+      efootballId: '6595302089',
+      avatarUrl: './images/avatar-admin.svg',
+      favoriteClub: 'Real Madrid'
+    },
+    scheduledTime: '2025-11-28 21:00',
+    status: 'approved',
+    result: {
+      player1Score: 2,
+      player2Score: 2,
+      submittedBy: 'guest_player',
+      submittedByName: 'Player',
+      screenshotUrl: './images/banner-esports.svg',
+      submittedAt: '2025-11-28T21:25:00.000Z',
+      notes: 'Exciting El Clasico draw in the final matchday.',
+      adminVerdict: {
+        approvedBy: 'Tournament Desk',
+        verifiedAt: '2025-11-28T21:30:00.000Z'
+      }
+    }
+  }
+];
 
 // Fallback sample match screenshot for testing
 export const SAMPLE_MATCH_SCREENSHOT = 'data:image/svg+xml;utf8,' + encodeURIComponent(`

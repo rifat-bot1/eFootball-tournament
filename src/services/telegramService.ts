@@ -233,7 +233,7 @@ export function formatTelegramMessageHtml(data: any): string {
              `🎮 <i>${data.player2_name} (eFootball ID: <code>${data.player2_efootball_id}</code>)</i>\n` +
              `━━━━━━━━━━━━━━━━━━━━━\n` +
              `${winnerText}\n` +
-             `✅ <b>Admin Verification:</b> Approved & Points Updated\n` +
+             `✅ <b>Match Verification:</b> Approved & Points Updated\n` +
              (data.screenshot_url ? `\n📸 <a href="${data.screenshot_url}">View Match Result Screenshot</a>` : '');
     }
     case 'tournament_created': {

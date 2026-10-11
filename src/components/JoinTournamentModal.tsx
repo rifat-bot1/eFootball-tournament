@@ -299,18 +299,15 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-7 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
-                  <span>Sending to Telegram...</span>
+                  <span>Joining...</span>
                 </>
               ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  <span>Join &amp; Notify Telegram</span>
-                </>
+                <span>Join</span>
               )}
             </button>
           </div>

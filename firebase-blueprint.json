@@ -73,6 +73,25 @@
         "createdAt": { "type": "string", "maxLength": 50 }
       },
       "required": ["uid", "email", "role"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Real-time tournament announcement or urgent news update",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 150 },
+        "message": { "type": "string", "maxLength": 1000 },
+        "type": { "type": "string", "enum": ["urgent", "tournament", "maintenance", "info"] },
+        "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+        "active": { "type": "boolean" },
+        "createdBy": { "type": "string", "maxLength": 128 },
+        "authorName": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "actionUrl": { "type": "string", "maxLength": 500 },
+        "actionLabel": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "title", "message", "type", "active", "createdAt"]
     }
   },
   "firestore": {
@@ -87,6 +106,10 @@
     "/fixtures/{fixtureId}": {
       "schema": "MatchFixture",
       "description": "Match fixtures, result scores and screenshots"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Real-time urgent tournament news and announcements"
     },
     "/admins/{adminId}": {
       "schema": "Admin",

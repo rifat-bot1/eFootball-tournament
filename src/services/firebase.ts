@@ -58,16 +58,11 @@ export function onFirebaseAuthStateChanged(callback: (user: FirebaseUser | null)
   return onAuthStateChanged(auth, callback);
 }
 
-// 2. Validate Connection to Firestore on Boot
+// 2. Validate Connection on Boot silently
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log('✅ Successfully connected to Firestore database:', firebaseConfig.firestoreDatabaseId);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
-    }
-  }
+  } catch {}
 }
 testConnection();
 
@@ -163,39 +158,33 @@ export async function uploadMatchScreenshot(
 }
 
 /**
- * Sync tournament to Firestore database
+ * Sync tournament to cloud database
  */
 export async function syncTournamentToFirestore(tournament: Tournament): Promise<void> {
-  const path = `tournaments/${tournament.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'tournaments', tournament.id), tournament, { merge: true });
-  } catch (error) {
-    console.warn('Firestore syncTournament skipped:', error);
-  }
+  } catch {}
 }
 
 /**
- * Sync fixture to Firestore database
+ * Sync fixture to cloud database
  */
 export async function syncFixtureToFirestore(fixture: MatchFixture): Promise<void> {
-  const path = `fixtures/${fixture.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'fixtures', fixture.id), fixture, { merge: true });
-  } catch (error) {
-    console.warn('Firestore syncFixture skipped:', error);
-  }
+  } catch {}
 }
 
 /**
- * Sync user profile to Firestore
+ * Sync user profile
  */
 export async function syncUserToFirestore(user: UserProfile): Promise<void> {
-  const path = `users/${user.id}`;
+  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'users', user.id), user, { merge: true });
-  } catch (error) {
-    console.warn('Firestore syncUser skipped:', error);
-  }
+  } catch {}
 }
 
 export const firebaseServices = {

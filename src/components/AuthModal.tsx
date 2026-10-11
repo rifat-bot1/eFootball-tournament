@@ -11,6 +11,7 @@ import {
 import { UserProfile } from '../types/tournament';
 import { auth, signInWithGoogle } from '../services/firebase';
 import { handleAvatarError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
+import { ADMIN_EMAIL, ADMIN_PASSWORD, OFFICIAL_ADMIN_PROFILE } from '../services/mockData';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -20,6 +21,7 @@ import {
 
 interface AuthModalProps {
   isOpen: boolean;
+  initialMode?: 'login' | 'register';
   onClose: () => void;
   currentUser: UserProfile;
   allUsers: UserProfile[];
@@ -28,6 +30,7 @@ interface AuthModalProps {
     name: string;
     email: string;
     efootballId: string;
+    password?: string;
     favoriteClub?: string;
     role?: 'player' | 'admin';
   }) => void;
@@ -36,6 +39,7 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
+  initialMode = 'login',
   onClose,
   currentUser,
   allUsers,
@@ -43,7 +47,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onRegister,
   onLogout
 }) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   
   // Registration fields
   const [playerName, setPlayerName] = useState('');
@@ -56,13 +60,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Reset errors and password when modal opens
+  // Reset errors and fields when modal opens
   useEffect(() => {
     if (isOpen) {
       setError('');
       setPassword('');
+      setEmail('');
+      setPlayerName('');
+      setEfootballId('');
+      if (initialMode) {
+        setMode(initialMode);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
@@ -83,13 +93,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
 
     try {
-      // 1. Try Firebase Auth
+      // Admin authentication check
+      if (trimmedEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        if (password !== ADMIN_PASSWORD) {
+          setError('Invalid admin credentials. Please enter the correct admin password.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Try background authentication
+        if (auth) {
+          try {
+            await signInWithEmailAndPassword(auth, trimmedEmail, password);
+          } catch (_err) {}
+        }
+
+        localStorage.setItem('efootball_remembered_email', trimmedEmail);
+        onSelectUser(OFFICIAL_ADMIN_PROFILE);
+        onClose();
+        return;
+      }
+
+      // Normal Player Authentication
       if (auth) {
         try {
           await signInWithEmailAndPassword(auth, trimmedEmail, password);
-        } catch (firebaseErr: any) {
-          console.warn('Firebase signIn notice:', firebaseErr.message);
-          if (firebaseErr.code === 'auth/wrong-password' || firebaseErr.code === 'auth/invalid-credential') {
+        } catch (authErr: any) {
+          if (authErr.code === 'auth/wrong-password' || authErr.code === 'auth/invalid-credential') {
             setError('Invalid email or password.');
             setIsLoading(false);
             return;
@@ -100,12 +130,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       // Remember email permanently
       localStorage.setItem('efootball_remembered_email', trimmedEmail);
 
-      // 2. Check local users database
+      // Check local users database
       const existing = allUsers.find(
         u => u.email.toLowerCase() === trimmedEmail.toLowerCase()
       );
 
       if (existing) {
+        // Enforce that existing non-admin email cannot be admin
+        if (existing.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+          existing.role = 'player';
+        }
         if (existing.efootballId) {
           localStorage.setItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`, existing.efootballId);
           localStorage.setItem('efootball_saved_id_last', existing.efootballId);
@@ -113,7 +147,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onSelectUser(existing);
         onClose();
       } else {
-        // If logged into Firebase or found previously, create profile
+        // If logged into Firebase or found previously, create player profile
         const rememberedId = localStorage.getItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`) || 
           localStorage.getItem('efootball_saved_id_last') ||
           `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
@@ -123,7 +157,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           name: trimmedEmail.split('@')[0],
           email: trimmedEmail,
           efootballId: rememberedId,
-          role: trimmedEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player'
+          role: 'player'
         });
         onClose();
       }
@@ -150,8 +184,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setError('eFootball In-Game ID is required to match players!');
       return;
     }
+
+    // Enforce unique eFootball ID across all users
+    const duplicatePlayer = allUsers.find(
+      u => u.efootballId && u.efootballId.trim().toLowerCase() === trimmedEfootballId.toLowerCase()
+    );
+    if (duplicatePlayer) {
+      setError(`This eFootball In-Game ID is already taken by "${duplicatePlayer.name}". Every player must have a unique ID! (এই eFootball In-Game ID টি অন্য একজন খেলোয়াড় ইতিমধ্যে ব্যবহার করছেন। সবার আইডি আলাদা হতে হবে।)`);
+      return;
+    }
+
     if (!trimmedEmail) {
       setError('Please enter a valid email address.');
+      return;
+    }
+    if (trimmedEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      setError('This email is reserved for the Admin. Please switch to the LOGIN tab to sign in.');
       return;
     }
     if (!password || password.length < 6) {
@@ -179,12 +227,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       localStorage.setItem('efootball_remembered_email', trimmedEmail);
       localStorage.setItem(`efootball_saved_id_${trimmedEmail.toLowerCase()}`, trimmedEfootballId);
 
-      // 2. Create player in tournament system
+      // 2. Create player in tournament system (strictly player role)
       onRegister({
         name: trimmedName,
         email: trimmedEmail,
         efootballId: trimmedEfootballId,
-        role: trimmedEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player'
+        password: password,
+        role: 'player'
       });
 
       onClose();
@@ -203,12 +252,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (user?.email) {
         const userEmail = user.email;
         localStorage.setItem('efootball_remembered_email', userEmail);
+
+        if (userEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          onSelectUser(OFFICIAL_ADMIN_PROFILE);
+          onClose();
+          return;
+        }
+
         const found = allUsers.find(u => u.email.toLowerCase() === userEmail.toLowerCase());
         if (found) {
           if (found.efootballId) {
             localStorage.setItem(`efootball_saved_id_${userEmail.toLowerCase()}`, found.efootballId);
             localStorage.setItem('efootball_saved_id_last', found.efootballId);
           }
+          found.role = 'player';
           onSelectUser(found);
           onClose();
           return;
@@ -224,7 +281,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           name: user.displayName || 'Google Player',
           email: userEmail,
           efootballId: rememberedId,
-          role: userEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player'
+          role: 'player'
         });
         onClose();
         return;

@@ -203,7 +203,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
             </div>
 
             <div className="rounded-2xl bg-amber-950/30 border border-amber-500/30 p-3.5 text-xs text-amber-200">
-              <strong>Why screenshots matter:</strong> Every result submitted without a clear, valid screenshot will be rejected by tournament admins to prevent score tampering.
+              <strong>Why screenshots matter:</strong> Every result submitted without a clear, valid screenshot will be rejected during official match verification to prevent score tampering.
             </div>
 
             <ul className="space-y-3 text-xs text-slate-300">
@@ -276,7 +276,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-[#00ff87] flex-shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-white block font-semibold">Respectful Communication:</strong>
-                  Maintain respect toward opponents and tournament admins. Abusive conduct in community groups or Telegram channels will not be tolerated.
+                  Maintain respect toward opponents and tournament officials. Abusive conduct in community groups or Telegram channels will not be tolerated.
                 </div>
               </li>
             </ul>
@@ -333,17 +333,17 @@ export const RulesView: React.FC<RulesViewProps> = ({
 
       </div>
 
-      {/* Admin Authorization Notice */}
+      {/* Official Match Verification Notice */}
       <div className="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-sky-950/20 to-slate-900 p-6 shadow-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
         <div className="space-y-1 max-w-xl">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-amber-400" />
-            <h4 className="text-sm font-black text-white">Admin Verification Authority</h4>
+            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <h4 className="text-sm font-black text-white">Official Match Verification</h4>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            All submitted results and screenshot proofs undergo verification by Admin <strong>Mohammad Rifat</strong>. 
+            All submitted results and screenshot proofs undergo official match verification. 
             Once approved, leaderboard standings and official <strong>Telegram Channel</strong> broadcasts are finalized automatically. 
-            In the event of a dispute, submit your complaint to the admin with video or screenshot evidence within 1 hour.
+            In the event of a dispute, submit your complaint via the official Telegram channel with video or screenshot evidence within 1 hour.
           </p>
         </div>
 

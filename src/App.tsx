@@ -21,7 +21,11 @@ import {
   calculateLeaderboard, 
   registerUser,
   clearCurrentUserSession,
-  getOrCreateUserProfileForAuth
+  getOrCreateUserProfileForAuth,
+  isUserAdmin,
+  concludeTournament,
+  updateUserProfile,
+  adminAddPlayerToTournament
 } from './services/tournamentService';
 import { onFirebaseAuthStateChanged, logOut } from './services/firebase';
 import { Tournament, MatchFixture, UserProfile, LeaderboardEntry } from './types/tournament';
@@ -29,17 +33,20 @@ import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { FixturesView } from './components/FixturesView';
 import { LeaderboardView } from './components/LeaderboardView';
+import { TournamentHistoryView } from './components/TournamentHistoryView';
 import { RulesView } from './components/RulesView';
 import { AdminPanel } from './components/AdminPanel';
 import { ResultSubmissionModal } from './components/ResultSubmissionModal';
 import { AuthModal } from './components/AuthModal';
+import { UserProfileModal } from './components/UserProfileModal';
 import { CreateTournamentModal } from './components/CreateTournamentModal';
 import { ScreenshotInspectModal } from './components/ScreenshotInspectModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { TournamentLiveNoticeFeedModal } from './components/TournamentLiveNoticeFeedModal';
 
 export default function App() {
   // Navigation
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'rules' | 'admin'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'history' | 'rules' | 'admin'>('dashboard');
 
   // Core Data States
   const [currentUser, setCurrentUserState] = useState<UserProfile>(getCurrentUser());
@@ -52,6 +59,9 @@ export default function App() {
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedFixtureForSubmit, setSelectedFixtureForSubmit] = useState<MatchFixture | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [isNoticeFeedModalOpen, setIsNoticeFeedModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isCreateTourModalOpen, setIsCreateTourModalOpen] = useState(false);
   const [inspectScreenshot, setInspectScreenshot] = useState<{ open: boolean; url: string; title: string }>({
     open: false,
@@ -66,6 +76,13 @@ export default function App() {
   useEffect(() => {
     setLeaderboard(calculateLeaderboard(selectedTournamentId));
   }, [fixtures, selectedTournamentId]);
+
+  // Security guard: If non-admin user is on 'admin' tab, redirect to 'dashboard'
+  useEffect(() => {
+    if (activeTab === 'admin' && !isUserAdmin(currentUser)) {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, currentUser]);
 
   // Listen to persistent Firebase Auth state and keep user session permanently saved
   useEffect(() => {
@@ -90,6 +107,10 @@ export default function App() {
     } catch (e) {}
     const defaultUser = getCurrentUser();
     setCurrentUserState(defaultUser);
+    setActiveTab('dashboard');
+    setIsProfileModalOpen(false);
+    setAuthModalMode('login');
+    setIsAuthModalOpen(true);
   };
 
   // Count pending reviews for admin badge
@@ -149,9 +170,31 @@ export default function App() {
     setSelectedTournamentId(newTour.id);
   };
 
-  const handleGenerateFixtures = (tournamentId: string) => {
-    generateFixturesForTournament(tournamentId);
-    setFixtures(getFixtures());
+  const handleGenerateFixtures = (tournamentId: string): { success: boolean; error?: string; count?: number } => {
+    try {
+      const generated = generateFixturesForTournament(tournamentId);
+      setFixtures(getFixtures());
+      setTournaments(getTournaments());
+      return { success: true, count: generated.length };
+    } catch (err: any) {
+      console.warn('Failed to generate fixtures:', err);
+      return { success: false, error: err?.message || 'Failed to generate fixtures' };
+    }
+  };
+
+  const handleAdminAddPlayer = (tournamentId: string, name?: string) => {
+    try {
+      adminAddPlayerToTournament(tournamentId, name);
+      setTournaments(getTournaments());
+      setAllUsers(getUsers());
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to add player' };
+    }
+  };
+
+  const handleConcludeTournament = (tournamentId: string) => {
+    concludeTournament(tournamentId);
     setTournaments(getTournaments());
   };
 
@@ -167,6 +210,13 @@ export default function App() {
     setCurrentUserState(newUser);
   };
 
+  const handleUpdateProfile = (updatedData: Partial<UserProfile>) => {
+    const updated = updateUserProfile(currentUser.id, updatedData);
+    setCurrentUserState(updated);
+    setAllUsers(getUsers());
+    setFixtures(getFixtures());
+  };
+
   const handleViewScreenshot = (url: string, title: string) => {
     setInspectScreenshot({ open: true, url, title });
   };
@@ -180,12 +230,24 @@ export default function App() {
         setActiveTab={(tab) => {
           if (tab === 'submit') {
             handleOpenSubmit();
+          } else if (tab === 'admin') {
+            if (isUserAdmin(currentUser)) {
+              setActiveTab('admin');
+            } else {
+              setAuthModalMode('login');
+              setIsAuthModalOpen(true);
+            }
           } else {
             setActiveTab(tab);
           }
         }}
         currentUser={currentUser}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenAuth={() => {
+          setAuthModalMode('login');
+          setIsAuthModalOpen(true);
+        }}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenNoticeFeed={() => setIsNoticeFeedModalOpen(true)}
         pendingReviewsCount={pendingReviewsCount}
         onLogout={handleLogout}
       />
@@ -198,6 +260,7 @@ export default function App() {
             tournaments={tournaments}
             currentUser={currentUser}
             leaderboard={leaderboard}
+            fixtures={fixtures}
             onJoinTournament={handleJoinTournament}
             onLeaveTournament={handleLeaveTournament}
             onUpdateTournamentBanner={handleUpdateTournamentBanner}
@@ -205,9 +268,16 @@ export default function App() {
               if (tourId) setSelectedTournamentId(tourId);
               setActiveTab('fixtures');
             }}
-            onNavigateToSubmit={() => handleOpenSubmit()}
+            onNavigateToSubmit={(fix) => handleOpenSubmit(fix)}
             onOpenCreateModal={() => setIsCreateTourModalOpen(true)}
             onNavigateToRules={() => setActiveTab('rules')}
+            onNavigateToHistory={() => setActiveTab('history')}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
+            onOpenAuth={() => {
+              setAuthModalMode('login');
+              setIsAuthModalOpen(true);
+            }}
+            onLogout={handleLogout}
           />
         )}
 
@@ -233,6 +303,19 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'history' && (
+          <TournamentHistoryView
+            tournaments={tournaments}
+            fixtures={fixtures}
+            currentUser={currentUser}
+            onViewScreenshot={handleViewScreenshot}
+            onNavigateToFixtures={(tourId) => {
+              if (tourId) setSelectedTournamentId(tourId);
+              setActiveTab('fixtures');
+            }}
+          />
+        )}
+
         {activeTab === 'rules' && (
           <RulesView
             onNavigateToSubmit={() => handleOpenSubmit()}
@@ -240,7 +323,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'admin' && (
+        {activeTab === 'admin' && isUserAdmin(currentUser) && (
           <AdminPanel
             currentUser={currentUser}
             fixtures={fixtures}
@@ -249,11 +332,10 @@ export default function App() {
             onRejectResult={handleRejectResult}
             onOpenCreateTournament={() => setIsCreateTourModalOpen(true)}
             onGenerateFixtures={handleGenerateFixtures}
+            onConcludeTournament={handleConcludeTournament}
             onViewScreenshot={handleViewScreenshot}
-            onSwitchToAdmin={() => {
-              const adminUser = allUsers.find(u => u.role === 'admin') || allUsers[0];
-              handleSelectUser(adminUser);
-            }}
+            onSwitchToAdmin={() => setIsAuthModalOpen(true)}
+            onAdminAddPlayer={handleAdminAddPlayer}
           />
         )}
 
@@ -269,9 +351,26 @@ export default function App() {
         onSubmitResult={handleSubmitResult}
       />
 
+      {/* Player Profile Details & Edit Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        currentUser={currentUser}
+        allUsers={allUsers}
+        fixtures={fixtures}
+        onUpdateProfile={handleUpdateProfile}
+        onOpenAuth={() => {
+          setIsProfileModalOpen(false);
+          setAuthModalMode('login');
+          setIsAuthModalOpen(true);
+        }}
+        onLogout={handleLogout}
+      />
+
       {/* Player Registration & Switch Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
+        initialMode={authModalMode}
         onClose={() => setIsAuthModalOpen(false)}
         currentUser={currentUser}
         allUsers={allUsers}
@@ -280,12 +379,33 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Admin: Create Tournament Modal */}
-      <CreateTournamentModal
-        isOpen={isCreateTourModalOpen}
-        onClose={() => setIsCreateTourModalOpen(false)}
-        onCreateTournament={handleCreateTournament}
+      {/* Tournament Live Notice & Urgent Feed Modal */}
+      <TournamentLiveNoticeFeedModal
+        isOpen={isNoticeFeedModalOpen}
+        onClose={() => setIsNoticeFeedModalOpen(false)}
+        currentUser={currentUser}
+        onNavigateToFixtures={() => {
+          setIsNoticeFeedModalOpen(false);
+          setActiveTab('fixtures');
+        }}
+        onNavigateToRules={() => {
+          setIsNoticeFeedModalOpen(false);
+          setActiveTab('rules');
+        }}
+        onNavigateToDashboard={() => {
+          setIsNoticeFeedModalOpen(false);
+          setActiveTab('dashboard');
+        }}
       />
+
+      {/* Admin: Create Tournament Modal */}
+      {isUserAdmin(currentUser) && (
+        <CreateTournamentModal
+          isOpen={isCreateTourModalOpen}
+          onClose={() => setIsCreateTourModalOpen(false)}
+          onCreateTournament={handleCreateTournament}
+        />
+      )}
 
       {/* Screenshot Full Screen Inspector Modal */}
       <ScreenshotInspectModal

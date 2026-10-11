@@ -63,6 +63,15 @@ service cloud.firestore {
              data.status in ['scheduled', 'submitted', 'approved', 'rejected'];
     }
 
+    // Validation for Announcement
+    function isValidAnnouncement(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.message is string && data.message.size() > 0 && data.message.size() <= 1000 &&
+             data.type in ['urgent', 'tournament', 'maintenance', 'info'] &&
+             data.active is bool;
+    }
+
     // Test connection doc (Required by Firebase skill)
     match /test/connection {
       allow read: if true;
@@ -126,6 +135,18 @@ service cloud.firestore {
                            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'result', 'submittedAt', 'notes'])
                          )
                        );
+      allow delete: if isAdmin();
+    }
+
+    // Announcements Collection (Real-time tournament announcements & urgent news)
+    match /announcements/{announcementId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(announcementId) &&
+                       isValidAnnouncement(incoming()) &&
+                       isAdmin();
+      allow update: if isSignedIn() && isValidId(announcementId) &&
+                       isValidAnnouncement(incoming()) &&
+                       isAdmin();
       allow delete: if isAdmin();
     }
   }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
   Trophy, 
   Users, 
+  User,
   Gamepad2, 
   Flame, 
   Calendar, 
@@ -20,18 +21,23 @@ import {
   LogOut,
   Send,
   ExternalLink,
-  Image as ImageIcon
+  Image as ImageIcon,
+  History
 } from 'lucide-react';
-import { Tournament, UserProfile, LeaderboardEntry } from '../types/tournament';
+import { Tournament, UserProfile, LeaderboardEntry, MatchFixture } from '../types/tournament';
 import confetti from 'canvas-confetti';
 import { JoinTournamentModal } from './JoinTournamentModal';
 import { EditBannerModal } from './EditBannerModal';
+import { UpcomingMatchCountdown } from './UpcomingMatchCountdown';
 import { handleAvatarError, handleBannerError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR, DEFAULT_BANNER } from '../utils/imageUtils';
+import { isUserAdmin } from '../services/mockData';
+import { getFixtures } from '../services/tournamentService';
 
 interface DashboardViewProps {
   tournaments: Tournament[];
   currentUser: UserProfile;
   leaderboard: LeaderboardEntry[];
+  fixtures?: MatchFixture[];
   onJoinTournament: (
     tournamentId: string,
     playerData?: {
@@ -46,22 +52,31 @@ interface DashboardViewProps {
   onLeaveTournament?: (tournamentId: string) => void;
   onUpdateTournamentBanner?: (tournamentId: string, bannerUrl: string) => void;
   onNavigateToFixtures: (tournamentId?: string) => void;
-  onNavigateToSubmit: () => void;
+  onNavigateToSubmit: (fixture?: MatchFixture) => void;
   onOpenCreateModal: () => void;
   onNavigateToRules?: () => void;
+  onNavigateToHistory?: () => void;
+  onOpenProfile?: () => void;
+  onOpenAuth?: () => void;
+  onLogout?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   tournaments,
   currentUser,
   leaderboard,
+  fixtures,
   onJoinTournament,
   onLeaveTournament,
   onUpdateTournamentBanner,
   onNavigateToFixtures,
   onNavigateToSubmit,
   onOpenCreateModal,
-  onNavigateToRules
+  onNavigateToRules,
+  onNavigateToHistory,
+  onOpenProfile,
+  onOpenAuth,
+  onLogout
 }) => {
   const [copiedId, setCopiedId] = useState(false);
   const [joinedAlert, setJoinedAlert] = useState<string | null>(null);
@@ -121,6 +136,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
+      {/* Upcoming Match Countdown & "Match Starting Soon" Notification */}
+      <UpcomingMatchCountdown
+        fixtures={fixtures || getFixtures()}
+        tournaments={tournaments}
+        currentUser={currentUser}
+        onNavigateToFixtures={onNavigateToFixtures}
+        onNavigateToSubmit={onNavigateToSubmit}
+      />
+
       {/* User Gaming Card / Stats Header */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-[#0a1224] to-slate-900 p-4 sm:p-6 shadow-2xl">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 h-48 w-48 rounded-full bg-[#00ff87]/10 blur-3xl pointer-events-none" />
@@ -129,12 +153,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
           {/* User info */}
           <div className="flex items-center gap-4">
-            <div className="relative">
+            <div 
+              className={`relative ${onOpenProfile ? 'cursor-pointer group' : ''}`}
+              onClick={onOpenProfile}
+              title={onOpenProfile ? 'Click to view & edit your profile' : undefined}
+            >
               <img 
                 src={currentUser.avatarUrl} 
                 alt={currentUser.name} 
-                className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border-2 border-[#00ff87] shadow-lg shadow-[#00ff87]/20"
-                onError={(e) => handleAvatarError(e, currentUser.role === 'admin' ? DEFAULT_ADMIN_AVATAR : DEFAULT_PLAYER_AVATAR)}
+                className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border-2 border-[#00ff87] shadow-lg shadow-[#00ff87]/20 group-hover:scale-105 transition-transform"
+                onError={(e) => handleAvatarError(e, isUserAdmin(currentUser) ? DEFAULT_ADMIN_AVATAR : DEFAULT_PLAYER_AVATAR)}
               />
               <span className="absolute -bottom-1 -right-1 rounded-full bg-slate-950 px-2 py-0.5 text-[10px] font-black uppercase text-[#00ff87] border border-[#00ff87]/40">
                 {currentUser.division}
@@ -142,13 +170,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide">
                   {currentUser.name}
                 </h1>
                 <span className="rounded-md bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-300">
                   {currentUser.favoriteClub}
                 </span>
+                {onOpenProfile && (
+                  <button
+                    onClick={onOpenProfile}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/80 px-2 py-0.5 text-[11px] font-semibold text-slate-300 hover:border-[#00ff87]/50 hover:text-white transition"
+                    title="View and edit player profile"
+                  >
+                    <User className="w-3 h-3 text-[#00ff87]" />
+                    <span>Edit Profile</span>
+                  </button>
+                )}
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="inline-flex items-center gap-1 rounded-lg border border-rose-900/50 bg-rose-950/40 px-2 py-0.5 text-[11px] font-semibold text-rose-400 hover:bg-rose-900/60 hover:text-white transition"
+                    title="Log out and switch to login & register"
+                  >
+                    <LogOut className="w-3 h-3 text-rose-400" />
+                    <span>Log Out</span>
+                  </button>
+                )}
               </div>
 
               {/* Copy In-Game ID */}
@@ -205,7 +253,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={onNavigateToSubmit}
+              onClick={() => onNavigateToSubmit()}
               className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-4 py-2 text-xs font-black text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
             >
               <Upload className="w-3.5 h-3.5" />
@@ -220,7 +268,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span>Rules</span>
               </button>
             )}
-            {currentUser.role === 'admin' && (
+            {onNavigateToHistory && (
+              <button
+                onClick={onNavigateToHistory}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition"
+              >
+                <History className="w-3.5 h-3.5 text-amber-400" />
+                <span>History</span>
+              </button>
+            )}
+            {isUserAdmin(currentUser) && (
               <button
                 onClick={onOpenCreateModal}
                 className="flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition"
@@ -308,11 +365,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {tournaments.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-8 sm:p-12 text-center text-slate-400">
             <Trophy className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <h3 className="text-base font-bold text-white">No Tournaments Created Yet</h3>
+            <h3 className="text-base font-bold text-white">
+              {isUserAdmin(currentUser) ? 'No Tournaments Created Yet' : 'No Active Tournaments'}
+            </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              All demo tournaments have been removed. Admins can create new real tournaments from the Admin Desk.
+              {isUserAdmin(currentUser) 
+                ? 'Create a new tournament and rules from here or the Admin Desk.' 
+                : 'Tournaments will appear here as soon as they are announced. Check back soon!'}
             </p>
-            {currentUser.role === 'admin' && (
+            {isUserAdmin(currentUser) && (
               <button
                 onClick={onOpenCreateModal}
                 className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-5 py-2.5 text-xs font-black uppercase text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
@@ -366,7 +427,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
 
                     {/* Admin Quick Action: Change Banner */}
-                    {currentUser.role === 'admin' && (
+                    {isUserAdmin(currentUser) && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -418,57 +479,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
 
                     {/* Action Button */}
-                    <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="pt-2">
                       {isJoined ? (
-                        <>
-                          <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-2 px-2.5 text-xs font-bold text-[#00ff87]">
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Registered</span>
-                          </div>
-                          
-                          {/* Re-notify / Update details button */}
-                          <button
-                            onClick={() => setJoiningTournament(tour)}
-                            className="inline-flex items-center justify-center gap-1 rounded-xl border border-sky-500/40 bg-sky-950/40 px-2.5 py-2 text-[11px] font-bold text-sky-300 hover:bg-sky-500/20 hover:text-white transition"
-                            title="Update player info or resend details to Telegram"
-                          >
-                            <Send className="w-3 h-3 text-sky-400" />
-                            <span>Re-notify Telegram</span>
-                          </button>
-
-                          {/* Leave button to allow re-testing registration */}
-                          {onLeaveTournament && (
-                            <button
-                              onClick={() => handleLeave(tour)}
-                              className="inline-flex items-center justify-center rounded-xl border border-rose-500/30 bg-rose-950/30 p-2 text-rose-400 hover:bg-rose-500/20 hover:text-rose-200 transition"
-                              title="Leave tournament (un-register to test again)"
-                            >
-                              <LogOut className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </>
+                        <div className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-2.5 px-3 text-xs font-bold text-[#00ff87]">
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Registered</span>
+                        </div>
                       ) : (
                         <button
                           onClick={() => setJoiningTournament(tour)}
                           disabled={isFull}
-                          className={`flex-1 rounded-xl py-2.5 text-xs font-black uppercase tracking-wider transition ${
+                          className={`w-full rounded-xl py-2.5 text-xs font-black uppercase tracking-wider transition ${
                             isFull
                               ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-[#00ff87] to-[#00e5ff] text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5'
+                              : 'bg-gradient-to-r from-[#00ff87] to-[#00e5ff] text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 flex items-center justify-center'
                           }`}
                         >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>{isFull ? 'Tournament Full' : 'Join & Notify Telegram'}</span>
+                          <span>{isFull ? 'Tournament Full' : 'Join'}</span>
                         </button>
                       )}
-
-                      <button
-                        onClick={() => onNavigateToFixtures(tour.id)}
-                        className="rounded-xl border border-slate-700 bg-slate-800/80 p-2.5 text-slate-300 hover:text-white hover:border-[#00ff87]/50 transition flex items-center justify-center"
-                        title="View Fixtures & Standings"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -488,7 +517,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <li>Add your opponent using their <strong>eFootball In-Game ID</strong> in the Friend Match lobby.</li>
           <li>Default settings: <strong>10 Minutes, Extra Time OFF, Penalties ON, Condition: Excellent</strong> unless specified.</li>
           <li>After the final whistle, take a <strong>full-screen screenshot</strong> showing both team names, scores, and match statistics.</li>
-          <li>Upload the screenshot under <strong>Submit Result</strong>. Once verified by an Admin, the points table and Telegram notification are updated instantly!</li>
+          <li>Upload the screenshot under <strong>Submit Result</strong>. Once verified, the points table and Telegram notification are updated instantly!</li>
         </ul>
       </div>
 
@@ -501,17 +530,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         onConfirmJoin={handleConfirmJoin}
       />
 
-      {/* Edit Tournament Banner Modal */}
-      <EditBannerModal
-        isOpen={Boolean(editingBannerTour)}
-        onClose={() => setEditingBannerTour(null)}
-        tournament={editingBannerTour}
-        onUpdateBanner={(tourId, newBanner) => {
-          onUpdateTournamentBanner?.(tourId, newBanner);
-          setJoinedAlert('Tournament banner updated successfully!');
-          setTimeout(() => setJoinedAlert(null), 3000);
-        }}
-      />
+      {/* Edit Tournament Banner Modal (Admin Only) */}
+      {isUserAdmin(currentUser) && (
+        <EditBannerModal
+          isOpen={Boolean(editingBannerTour)}
+          onClose={() => setEditingBannerTour(null)}
+          tournament={editingBannerTour}
+          onUpdateBanner={(tourId, newBanner) => {
+            onUpdateTournamentBanner?.(tourId, newBanner);
+            setJoinedAlert('Tournament banner updated successfully!');
+            setTimeout(() => setJoinedAlert(null), 3000);
+          }}
+        />
+      )}
 
     </div>
   );

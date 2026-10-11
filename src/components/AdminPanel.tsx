@@ -14,12 +14,13 @@ import {
   ExternalLink, 
   ChevronRight,
   Flame,
-  Send
+  Send,
+  Trophy
 } from 'lucide-react';
 import { MatchFixture, Tournament, UserProfile } from '../types/tournament';
 import confetti from 'canvas-confetti';
 import { handleAvatarError, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
-import { broadcastFixturesToTelegram } from '../services/tournamentService';
+import { broadcastFixturesToTelegram, isUserAdmin } from '../services/tournamentService';
 
 interface AdminPanelProps {
   currentUser: UserProfile;
@@ -28,9 +29,11 @@ interface AdminPanelProps {
   onApproveResult: (fixtureId: string) => Promise<{ telegramResult?: any }>;
   onRejectResult: (fixtureId: string, reason: string) => void;
   onOpenCreateTournament: () => void;
-  onGenerateFixtures: (tournamentId: string) => void;
+  onGenerateFixtures: (tournamentId: string) => { success: boolean; error?: string; count?: number } | void;
+  onConcludeTournament?: (tournamentId: string) => void;
   onViewScreenshot: (url: string, fixtureTitle: string) => void;
   onSwitchToAdmin: () => void;
+  onAdminAddPlayer?: (tournamentId: string, name?: string) => { success: boolean; error?: string } | void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -41,8 +44,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onRejectResult,
   onOpenCreateTournament,
   onGenerateFixtures,
+  onConcludeTournament,
   onViewScreenshot,
-  onSwitchToAdmin
+  onSwitchToAdmin,
+  onAdminAddPlayer
 }) => {
   const [selectedTourForFixtures, setSelectedTourForFixtures] = useState<string>(
     tournaments[0]?.id || ''
@@ -58,6 +63,51 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const pendingSubmissions = fixtures.filter(f => f.status === 'submitted');
   const completedCount = fixtures.filter(f => f.status === 'approved').length;
+
+  const currentSelectedTour = tournaments.find(t => t.id === selectedTourForFixtures) || tournaments[0];
+  const registeredCount = currentSelectedTour?.registeredPlayerIds.length || 0;
+  const hasEnoughPlayers = registeredCount >= 2;
+  const isCurrentUserRegistered = Boolean(currentSelectedTour?.registeredPlayerIds.includes(currentUser.id));
+  const activeFixturesForTour = fixtures.filter(f => f.tournamentId === currentSelectedTour?.id);
+
+  const handleGeneratePairings = () => {
+    if (!currentSelectedTour) {
+      setRecentTelegramNotification({
+        text: '⚠️ Please select a tournament to generate fixtures.',
+        status: 'failed'
+      });
+      return;
+    }
+
+    if (registeredCount < 2) {
+      setRecentTelegramNotification({
+        text: `⚠️ Cannot generate fixtures: "${currentSelectedTour.title}" currently has ${registeredCount} registered player${registeredCount === 1 ? '' : 's'}. At least 2 players are required before generating tournament pairings.`,
+        status: 'failed'
+      });
+      return;
+    }
+
+    try {
+      const res = onGenerateFixtures(currentSelectedTour.id);
+      if (res && res.success === false) {
+        setRecentTelegramNotification({
+          text: `⚠️ ${res.error || 'Failed to generate pairings'}`,
+          status: 'failed'
+        });
+        return;
+      }
+      confetti({ particleCount: 50, spread: 60 });
+      setRecentTelegramNotification({
+        text: `🎉 Match pairings generated successfully for "${currentSelectedTour.title}"!`,
+        status: 'success'
+      });
+    } catch (err: any) {
+      setRecentTelegramNotification({
+        text: `⚠️ ${err?.message || 'Error generating fixtures'}`,
+        status: 'failed'
+      });
+    }
+  };
 
   const handleApprove = async (fixture: MatchFixture) => {
     try {
@@ -88,27 +138,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setRejectionReason('');
   };
 
-  // If user is not admin, show friendly unlock / switch button
-  if (currentUser.role !== 'admin') {
-    return (
-      <div className="rounded-2xl border border-amber-500/30 bg-slate-900/90 p-8 text-center max-w-xl mx-auto space-y-4">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
-          <AlertTriangle className="w-8 h-8" />
-        </div>
-        <h2 className="text-xl font-black text-white">Admin Privileges Required</h2>
-        <p className="text-xs text-slate-400">
-          You are currently signed in as <strong>{currentUser.name}</strong> (Player).
-          To review screenshot submissions, approve match scores, and dispatch Telegram notifications, switch to the Admin profile.
-        </p>
-        <button
-          onClick={onSwitchToAdmin}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-6 py-2.5 text-xs font-black uppercase text-slate-950 hover:brightness-110 active:scale-95 transition"
-        >
-          <UserCheck className="w-4 h-4" />
-          <span>Switch to Admin (Mohammad Rifat)</span>
-        </button>
-      </div>
-    );
+  // Strictly hide entire admin panel from non-admin users
+  if (!isUserAdmin(currentUser)) {
+    return null;
   }
 
   return (
@@ -374,7 +406,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {tournaments.length === 0 ? (
               <span className="text-xs text-slate-500 italic">No tournaments created yet</span>
             ) : (
@@ -393,17 +425,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (selectedTourForFixtures) {
-                      onGenerateFixtures(selectedTourForFixtures);
-                      confetti({ particleCount: 50, spread: 60 });
-                      setRecentTelegramNotification({
-                        text: 'Fixtures generated & broadcasting to Telegram (@eFootballTournamentBD)!',
-                        status: 'success'
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#00e5ff]/50 bg-sky-950/40 px-3.5 py-1.5 text-xs font-bold text-[#00e5ff] hover:bg-sky-500/20 transition"
+                  onClick={handleGeneratePairings}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition ${
+                    hasEnoughPlayers 
+                      ? 'border-[#00e5ff]/50 bg-sky-950/40 text-[#00e5ff] hover:bg-sky-500/20 active:scale-95' 
+                      : 'border-amber-500/40 bg-amber-950/20 text-amber-300 hover:bg-amber-500/10'
+                  }`}
+                  title={hasEnoughPlayers ? 'Generate Match Pairings' : 'At least 2 players must register first'}
                 >
                   <Shuffle className="w-3.5 h-3.5" />
                   <span>Generate Pairings</span>
@@ -437,10 +465,103 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <Send className="w-3.5 h-3.5" />
                   <span>{isBroadcastingFixtures ? 'Posting...' : 'Post to Telegram'}</span>
                 </button>
+
+                {onConcludeTournament && selectedTourForFixtures && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to conclude and archive this tournament? The top ranked player will be crowned champion in Tournament History.')) {
+                        onConcludeTournament(selectedTourForFixtures);
+                        confetti({ particleCount: 70, spread: 80 });
+                        setRecentTelegramNotification({
+                          text: 'Tournament concluded and archived into Tournament History!',
+                          status: 'success'
+                        });
+                      }
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-950/40 px-3.5 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition"
+                    title="Conclude tournament and archive into Tournament History"
+                  >
+                    <Trophy className="w-3.5 h-3.5" />
+                    <span>Conclude &amp; Archive</span>
+                  </button>
+                )}
               </>
             )}
           </div>
         </div>
+
+        {/* Selected Tournament Status & Quick Registration Bar */}
+        {currentSelectedTour && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
+                hasEnoughPlayers 
+                  ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30' 
+                  : 'bg-amber-950/60 text-amber-400 border-amber-500/30'
+              }`}>
+                {registeredCount} / {currentSelectedTour.maxPlayers} Players Registered
+              </span>
+              <span className="text-xs text-slate-400">
+                Format: <strong className="text-slate-200 capitalize">{currentSelectedTour.format}</strong> • Status: <strong className="text-slate-200 capitalize">{currentSelectedTour.status}</strong>
+                {activeFixturesForTour.length > 0 && (
+                  <span className="ml-2 text-sky-400">({activeFixturesForTour.length} matches created)</span>
+                )}
+              </span>
+            </div>
+
+            {/* Quick Registration Helper for Admin / Testing */}
+            <div className="flex items-center gap-2">
+              {!isCurrentUserRegistered && onAdminAddPlayer && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAdminAddPlayer(currentSelectedTour.id, currentUser.name);
+                    setRecentTelegramNotification({
+                      text: `Registered ${currentUser.name} into tournament "${currentSelectedTour.title}"!`,
+                      status: 'success'
+                    });
+                  }}
+                  className="flex items-center gap-1 rounded-lg bg-sky-600/30 border border-sky-500/40 px-2.5 py-1 text-xs font-semibold text-sky-300 hover:bg-sky-500/40 transition"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Join as Admin</span>
+                </button>
+              )}
+
+              {onAdminAddPlayer && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAdminAddPlayer(currentSelectedTour.id);
+                    setRecentTelegramNotification({
+                      text: `Added player into "${currentSelectedTour.title}"! Now has ${registeredCount + 1} players.`,
+                      status: 'success'
+                    });
+                  }}
+                  className="flex items-center gap-1 rounded-lg bg-emerald-600/30 border border-emerald-500/40 px-2.5 py-1 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/40 transition"
+                  title="Add a player to this tournament for testing fixture pairings"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Player</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Informative Warning when Tournament has less than 2 players */}
+        {currentSelectedTour && !hasEnoughPlayers && (
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 text-amber-300 text-xs">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+            <div>
+              <p className="font-semibold">Minimum 2 registered players required to generate pairings</p>
+              <p className="text-amber-400/80 text-[11px] mt-0.5">
+                Current count: {registeredCount}. Share the tournament with players to join, or click <span className="font-bold underline cursor-pointer" onClick={() => onAdminAddPlayer && onAdminAddPlayer(currentSelectedTour.id)}>+ Add Player</span> above to quickly test fixtures.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Rejection Modal */}

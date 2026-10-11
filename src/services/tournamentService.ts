@@ -6,7 +6,18 @@ import {
   MatchResult,
   TournamentRules 
 } from '../types/tournament';
-import { SEED_PLAYERS, SEED_TOURNAMENTS, SEED_FIXTURES } from './mockData';
+import { 
+  SEED_PLAYERS, 
+  SEED_TOURNAMENTS, 
+  SEED_FIXTURES, 
+  ADMIN_EMAIL, 
+  ADMIN_PASSWORD, 
+  isUserAdmin,
+  OFFICIAL_ADMIN_PROFILE,
+  DEFAULT_GUEST_PLAYER,
+  HISTORICAL_COMPLETED_TOURNAMENTS,
+  HISTORICAL_COMPLETED_FIXTURES
+} from './mockData';
 import { sendTelegramNotification } from './telegramService';
 import { 
   uploadMatchScreenshot, 
@@ -14,6 +25,14 @@ import {
   syncFixtureToFirestore, 
   syncUserToFirestore 
 } from './firebase';
+
+export { 
+  ADMIN_EMAIL, 
+  ADMIN_PASSWORD, 
+  isUserAdmin,
+  HISTORICAL_COMPLETED_TOURNAMENTS,
+  HISTORICAL_COMPLETED_FIXTURES
+};
 
 const STORAGE_USERS = 'efootball_users_clean_v3';
 const STORAGE_CURRENT_USER = 'efootball_current_user_clean_v3';
@@ -66,6 +85,10 @@ export function getCurrentUser(): UserProfile {
     if (raw) {
       const parsed: UserProfile = JSON.parse(raw);
       if (parsed && parsed.id && parsed.name) {
+        // Enforce strict security: ONLY ADMIN_EMAIL can have role 'admin'
+        if (parsed.role === 'admin' && parsed.email?.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+          parsed.role = 'player';
+        }
         // Fix outdated or broken Unsplash avatars
         if (parsed.avatarUrl?.includes('unsplash.com') || !parsed.avatarUrl) {
           parsed.avatarUrl = parsed.role === 'admin' ? './images/avatar-admin.svg' : './images/avatar-player.svg';
@@ -81,7 +104,7 @@ export function getCurrentUser(): UserProfile {
       }
     }
   } catch (e) {}
-  const defaultUser = SEED_PLAYERS[0];
+  const defaultUser = { ...DEFAULT_GUEST_PLAYER };
   try {
     const savedId = localStorage.getItem('efootball_saved_id_last');
     if (savedId) {
@@ -139,13 +162,35 @@ export function getOrCreateUserProfileForAuth(
   preferredEfootballId?: string
 ): UserProfile {
   const users = getUsers();
+  const isMasterAdmin = authEmail.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
   const existing = users.find(u => u.email.toLowerCase() === authEmail.toLowerCase());
   if (existing) {
+    if (isMasterAdmin) {
+      existing.role = 'admin';
+      existing.name = displayName || OFFICIAL_ADMIN_PROFILE.name;
+      existing.avatarUrl = photoURL || OFFICIAL_ADMIN_PROFILE.avatarUrl;
+    } else {
+      existing.role = 'player';
+    }
     if (preferredEfootballId && preferredEfootballId !== existing.efootballId) {
       existing.efootballId = preferredEfootballId;
     }
     setCurrentUser(existing);
     return existing;
+  }
+
+  if (isMasterAdmin) {
+    const adminUser: UserProfile = {
+      ...OFFICIAL_ADMIN_PROFILE,
+      name: displayName || OFFICIAL_ADMIN_PROFILE.name,
+      avatarUrl: photoURL || OFFICIAL_ADMIN_PROFILE.avatarUrl
+    };
+    users.push(adminUser);
+    localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+    setCurrentUser(adminUser);
+    syncUserToFirestore(adminUser).catch(() => {});
+    return adminUser;
   }
 
   const rememberedId = preferredEfootballId || 
@@ -157,8 +202,8 @@ export function getOrCreateUserProfileForAuth(
     name: displayName || authEmail.split('@')[0],
     email: authEmail,
     efootballId: rememberedId,
-    avatarUrl: photoURL || (authEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? './images/avatar-admin.svg' : './images/avatar-player.svg'),
-    role: authEmail.toLowerCase() === 'rfrifatbs@gmail.com' ? 'admin' : 'player',
+    avatarUrl: photoURL || './images/avatar-player.svg',
+    role: 'player',
     favoriteClub: 'eFootball FC',
     rating: 1500,
     division: 'Division 3',
@@ -170,6 +215,164 @@ export function getOrCreateUserProfileForAuth(
   setCurrentUser(newUser);
   syncUserToFirestore(newUser).catch(() => {});
   return newUser;
+}
+
+/**
+ * Update player profile details and sync across fixtures and storage
+ */
+export function updateUserProfile(
+  userId: string,
+  data: Partial<UserProfile>
+): UserProfile {
+  const users = getUsers();
+  const index = users.findIndex(u => u.id === userId);
+  const current = getCurrentUser();
+
+  const targetUser = index >= 0 ? users[index] : current;
+
+  // Strict security: Never allow non-master-admin to claim admin role
+  const isMasterAdmin = (data.email || targetUser.email || '').trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  const safeRole = isMasterAdmin ? (data.role || targetUser.role) : 'player';
+
+  // 1. Check eFootball In-Game ID change & enforce 10-day cooldown and uniqueness
+  const newEfootballId = data.efootballId ? data.efootballId.trim() : targetUser.efootballId;
+  const isIdChanged = Boolean(
+    targetUser.efootballId && 
+    newEfootballId.toLowerCase() !== targetUser.efootballId.trim().toLowerCase()
+  );
+
+  let newLastChangedAt = targetUser.lastEfootballIdChangedAt;
+
+  if (isIdChanged) {
+    // A) Enforce uniqueness across all players
+    const idDuplicate = users.find(
+      u => u.id !== targetUser.id && 
+           u.efootballId && 
+           u.efootballId.trim().toLowerCase() === newEfootballId.toLowerCase()
+    );
+    if (idDuplicate) {
+      throw new Error(`eFootball In-Game ID "${newEfootballId}" is already taken by player "${idDuplicate.name}". Every player must have a unique ID! (এই eFootball In-Game ID টি অন্য একজন খেলোয়াড় ইতিমধ্যে ব্যবহার করছেন। সবার আইডি আলাদা হতে হবে।)`);
+    }
+
+    // B) Enforce 10-day cooldown rule
+    if (targetUser.lastEfootballIdChangedAt) {
+      const COOLDOWN_DAYS = 10;
+      const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+      const lastChange = new Date(targetUser.lastEfootballIdChangedAt).getTime();
+      const elapsed = Date.now() - lastChange;
+      if (elapsed < COOLDOWN_MS) {
+        const remainingMs = COOLDOWN_MS - elapsed;
+        const remainingDays = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+        const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000));
+        throw new Error(
+          `eFootball In-Game ID can only be changed once every 10 days! Please wait ${remainingDays > 1 ? `${remainingDays} more days` : `${remainingHours} more hours`} before changing your ID again. (eFootball In-Game ID ১০ দিন পরপর পরিবর্তন করা যাবে।)`
+        );
+      }
+    }
+
+    // Record timestamp of this eFootball ID modification
+    newLastChangedAt = new Date().toISOString();
+  }
+
+  // 2. Check email change and uniqueness
+  const newEmail = data.email ? data.email.trim() : targetUser.email;
+  const isEmailChanged = Boolean(
+    targetUser.email && 
+    newEmail.toLowerCase() !== targetUser.email.trim().toLowerCase()
+  );
+  if (isEmailChanged && newEmail) {
+    const emailDuplicate = users.find(
+      u => u.id !== targetUser.id && 
+           u.email && 
+           u.email.trim().toLowerCase() === newEmail.toLowerCase()
+    );
+    if (emailDuplicate) {
+      throw new Error(`Email address "${newEmail}" is already registered to another account.`);
+    }
+    if (newEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase() && targetUser.id !== OFFICIAL_ADMIN_PROFILE.id) {
+      throw new Error('This email address is reserved exclusively for the Admin.');
+    }
+  }
+
+  // 3. Password validation
+  let updatedPassword = targetUser.password;
+  if (data.password !== undefined && data.password.trim() !== '') {
+    if (data.password.trim().length < 6) {
+      throw new Error('Password must be at least 6 characters long.');
+    }
+    updatedPassword = data.password.trim();
+  }
+
+  const updatedUser: UserProfile = {
+    ...targetUser,
+    ...data,
+    id: targetUser.id, // preserve immutable ID
+    role: safeRole,
+    efootballId: newEfootballId,
+    name: data.name?.trim() || targetUser.name,
+    email: newEmail,
+    avatarUrl: data.avatarUrl || targetUser.avatarUrl,
+    favoriteClub: data.favoriteClub?.trim() || targetUser.favoriteClub || 'eFootball FC',
+    division: data.division || targetUser.division || 'Division 3',
+    playstyle: data.playstyle || targetUser.playstyle || 'Quick Counter',
+    phone: data.phone !== undefined ? data.phone.trim() : targetUser.phone,
+    bio: data.bio !== undefined ? data.bio.trim() : targetUser.bio,
+    password: updatedPassword,
+    lastEfootballIdChangedAt: newLastChangedAt
+  };
+
+  // Update in users array
+  if (index >= 0) {
+    users[index] = updatedUser;
+  } else {
+    users.push(updatedUser);
+  }
+  localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+
+  // If this is the current active user, update current session
+  if (current.id === updatedUser.id || (current.email && updatedUser.email && current.email.toLowerCase() === updatedUser.email.toLowerCase())) {
+    setCurrentUser(updatedUser);
+  }
+
+  // Update permanent eFootball ID map
+  if (updatedUser.efootballId) {
+    localStorage.setItem('efootball_saved_id_last', updatedUser.efootballId);
+    if (updatedUser.email) {
+      localStorage.setItem(`efootball_saved_id_${updatedUser.email.toLowerCase()}`, updatedUser.efootballId);
+      localStorage.setItem('efootball_remembered_email', updatedUser.email);
+    }
+  }
+
+  // Reflect new name, avatar, and in-game ID in fixtures
+  try {
+    const rawFixtures = localStorage.getItem(STORAGE_FIXTURES);
+    if (rawFixtures) {
+      const fixtures: MatchFixture[] = JSON.parse(rawFixtures);
+      let fixtureUpdated = false;
+      fixtures.forEach(f => {
+        if (f.player1.id === updatedUser.id) {
+          f.player1.name = updatedUser.name;
+          f.player1.avatarUrl = updatedUser.avatarUrl;
+          f.player1.efootballId = updatedUser.efootballId;
+          fixtureUpdated = true;
+        }
+        if (f.player2.id === updatedUser.id) {
+          f.player2.name = updatedUser.name;
+          f.player2.avatarUrl = updatedUser.avatarUrl;
+          f.player2.efootballId = updatedUser.efootballId;
+          fixtureUpdated = true;
+        }
+      });
+      if (fixtureUpdated) {
+        localStorage.setItem(STORAGE_FIXTURES, JSON.stringify(fixtures));
+      }
+    }
+  } catch (e) {}
+
+  // Sync to Firestore
+  syncUserToFirestore(updatedUser).catch(() => {});
+
+  return updatedUser;
 }
 
 export function getTournaments(): Tournament[] {
@@ -234,24 +437,42 @@ export function registerUser(data: {
   name: string;
   email: string;
   efootballId: string;
+  password?: string;
   favoriteClub?: string;
   role?: 'player' | 'admin';
 }): UserProfile {
   const users = getUsers();
+  const trimmedId = data.efootballId.trim();
+
+  // 1. Enforce unique eFootball In-Game ID
+  const duplicateId = users.find(
+    u => u.efootballId && u.efootballId.trim().toLowerCase() === trimmedId.toLowerCase()
+  );
+  if (duplicateId) {
+    throw new Error(`eFootball In-Game ID "${trimmedId}" is already taken by player "${duplicateId.name}". Every player must have a unique ID! (এই eFootball In-Game ID টি অন্য একজন খেলোয়াড় ইতিমধ্যে ব্যবহার করছেন। সবার আইডি আলাদা হতে হবে।)`);
+  }
+
+  // 2. Check unique email
   const existing = users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
   if (existing) {
     throw new Error('User with this email already exists.');
   }
 
-  const isMasterAdmin = data.email.toLowerCase() === 'rfrifatbs@gmail.com';
+  const isMasterAdmin = data.email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  if (isMasterAdmin) {
+    throw new Error('The admin account is already registered. Please use the LOGIN tab with your admin password.');
+  }
+
   const newUser: UserProfile = {
     id: `user_${Date.now()}`,
     name: data.name,
     email: data.email,
-    efootballId: data.efootballId.trim(),
-    avatarUrl: isMasterAdmin || data.role === 'admin' ? './images/avatar-admin.svg' : './images/avatar-player.svg',
-    role: data.role || (isMasterAdmin ? 'admin' : 'player'),
+    efootballId: trimmedId,
+    avatarUrl: './images/avatar-player.svg',
+    role: 'player',
     favoriteClub: data.favoriteClub || 'FC Barcelona',
+    password: data.password ? data.password.trim() : undefined,
+    lastEfootballIdChangedAt: new Date().toISOString(),
     rating: 1500,
     division: 'Division 3',
     createdAt: new Date().toISOString()
@@ -383,6 +604,29 @@ export function updateTournamentBanner(tournamentId: string, bannerUrl: string):
 }
 
 /**
+ * Conclude and finalize tournament, determine champion, and archive into history
+ */
+export function concludeTournament(tournamentId: string): Tournament {
+  const tournaments = getTournaments();
+  const index = tournaments.findIndex(t => t.id === tournamentId);
+  if (index === -1) throw new Error('Tournament not found');
+
+  const standings = calculateLeaderboard(tournamentId);
+  const winner = standings[0];
+
+  tournaments[index] = {
+    ...tournaments[index],
+    status: 'completed',
+    winnerId: winner?.playerId || undefined,
+    winnerName: winner?.playerName || undefined
+  };
+
+  saveTournaments(tournaments);
+  syncTournamentToFirestore(tournaments[index]).catch(() => {});
+  return tournaments[index];
+}
+
+/**
  * Create a new Tournament and trigger Telegram webhook
  */
 export async function createTournament(data: {
@@ -441,6 +685,52 @@ export async function createTournament(data: {
 }
 
 /**
+ * Admin helper to quickly register a player into a tournament for testing or manual management
+ */
+export function adminAddPlayerToTournament(
+  tournamentId: string, 
+  playerName?: string, 
+  efootballId?: string
+): Tournament {
+  const tournaments = getTournaments();
+  const index = tournaments.findIndex(t => t.id === tournamentId);
+  if (index === -1) throw new Error('Tournament not found');
+
+  const tour = tournaments[index];
+  const users = getUsers();
+
+  const count = tour.registeredPlayerIds.length + 1;
+  const customId = `player_test_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const name = playerName || `Challenger #${count}`;
+  const gameId = efootballId || `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+
+  const CLUBS = ['Manchester City', 'Real Madrid', 'FC Barcelona', 'Arsenal', 'Bayern Munich', 'Inter Milan', 'Liverpool'];
+  const newPlayer: UserProfile = {
+    id: customId,
+    name,
+    email: `player_${customId.slice(-6)}@efootball.com`,
+    efootballId: gameId,
+    avatarUrl: './images/avatar-player.svg',
+    role: 'player',
+    favoriteClub: CLUBS[Math.floor(Math.random() * CLUBS.length)],
+    rating: 1200 + Math.floor(Math.random() * 350),
+    division: `Division ${Math.floor(1 + Math.random() * 4)}`,
+    createdAt: new Date().toISOString()
+  };
+
+  users.push(newPlayer);
+  localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+  syncUserToFirestore(newPlayer).catch(() => {});
+
+  tour.registeredPlayerIds.push(newPlayer.id);
+  tournaments[index] = { ...tour };
+  saveTournaments(tournaments);
+  syncTournamentToFirestore(tour).catch(() => {});
+
+  return tour;
+}
+
+/**
  * Generate Fixture Pairings for a Tournament
  */
 export function generateFixturesForTournament(tournamentId: string): MatchFixture[] {
@@ -449,12 +739,27 @@ export function generateFixturesForTournament(tournamentId: string): MatchFixtur
   if (!tour) throw new Error('Tournament not found');
 
   const allUsers = getUsers();
+  // Safe mapping of players, ensuring no registered ID is dropped if localStorage had desync
   const registeredUsers = tour.registeredPlayerIds
-    .map(id => allUsers.find(u => u.id === id))
+    .map(id => {
+      const found = allUsers.find(u => u.id === id);
+      if (found) return found;
+      return {
+        id,
+        name: `Player ${id.slice(-4)}`,
+        efootballId: `ID_${id.slice(-6)}`,
+        avatarUrl: './images/avatar-player.svg',
+        role: 'player' as const,
+        favoriteClub: 'eFootball FC',
+        rating: 1200,
+        division: 'Division 3',
+        createdAt: new Date().toISOString()
+      };
+    })
     .filter((u): u is UserProfile => Boolean(u));
 
   if (registeredUsers.length < 2) {
-    throw new Error('Need at least 2 registered players to generate fixtures.');
+    throw new Error(`Tournament "${tour.title}" requires at least 2 registered players to generate fixtures (Currently registered: ${registeredUsers.length}).`);
   }
 
   // Shuffle players

@@ -1,5 +1,5 @@
 // eFootball Tournament Arena - Service Worker
-const CACHE_NAME = 'efootball-arena-v3';
+const CACHE_NAME = 'efootball-arena-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -34,16 +34,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Navigation fallback & cache-first for static assets
-  if (event.request.mode === 'navigate') {
+  // Network-first strategy for navigation and scripts so users always get fresh updates immediately
+  if (event.request.mode === 'navigate' || event.request.destination === 'script' || event.request.destination === 'style') {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match('/index.html');
-      })
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request).then((res) => res || caches.match('./index.html')))
     );
     return;
   }
 
+  // Cache-first for images/icons
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -59,7 +66,6 @@ self.addEventListener('fetch', (event) => {
         });
         return networkResponse;
       }).catch(() => {
-        // Fallback for offline if not in cache
         return cachedResponse;
       });
     })

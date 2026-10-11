@@ -8,6 +8,11 @@ export interface UserProfile {
   favoriteClub: string; // e.g. FC Barcelona, Real Madrid, Arsenal, Manchester City
   rating: number; // e.g. 1820
   division: string; // e.g. Division 1
+  playstyle?: string; // e.g. Quick Counter, Possession Game, Long Ball Counter
+  phone?: string;
+  bio?: string;
+  password?: string;
+  lastEfootballIdChangedAt?: string; // ISO date of last eFootball ID change for 10-day cooldown
   createdAt: string;
 }
 
@@ -115,4 +120,19 @@ export interface TelegramConfigSettings {
   secretKey: string;
   autoNotifyOnApproval: boolean;
   autoNotifyOnCreate: boolean;
+}
+
+export interface TournamentAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'urgent' | 'tournament' | 'maintenance' | 'info';
+  priority?: 'high' | 'medium' | 'low';
+  active: boolean;
+  createdBy?: string;
+  authorName?: string;
+  createdAt: string;
+  actionUrl?: string;
+  actionLabel?: string;
+  expiresAt?: string;
 }
