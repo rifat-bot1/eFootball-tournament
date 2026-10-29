@@ -177,9 +177,9 @@ export const TournamentLiveNoticeFeedModal: React.FC<TournamentLiveNoticeFeedMod
   const urgentCount = announcements.filter(a => a.type === 'urgent' && a.active).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(env(safe-area-inset-top,0px),36px)] pb-[max(env(safe-area-inset-bottom,0px),60px)] px-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
       <div 
-        className="relative flex flex-col w-full max-w-2xl max-h-[90vh] rounded-2xl border border-slate-700/80 bg-[#0a101d] text-white shadow-2xl shadow-emerald-500/10 overflow-hidden"
+        className="relative flex flex-col w-full max-w-2xl max-h-[88vh] rounded-2xl border border-slate-700/80 bg-[#0a101d] text-white shadow-2xl shadow-emerald-500/10 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}

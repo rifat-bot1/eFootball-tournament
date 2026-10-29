@@ -404,11 +404,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center pt-[max(env(safe-area-inset-top,0px),36px)] pb-[max(env(safe-area-inset-bottom,0px),50px)] px-3 sm:px-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-3xl bg-[#0b1220] border border-slate-800 rounded-3xl shadow-2xl shadow-[#00ff87]/10 overflow-hidden my-4 max-h-[94vh] flex flex-col"
+        className="relative w-full max-w-3xl bg-[#0b1220] border border-slate-800 rounded-3xl shadow-2xl shadow-[#00ff87]/10 overflow-hidden my-auto max-h-[88vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Ambient Top Glows */}

@@ -50,3 +50,18 @@
   background: #00ff87;
 }
 
+/* Mobile safe area and touch optimizations */
+html, body {
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.safe-top-padding {
+  padding-top: max(env(safe-area-inset-top, 0px), 32px);
+}
+
+.safe-bottom-padding {
+  padding-bottom: max(calc(env(safe-area-inset-bottom, 0px) + 120px), 130px);
+}
+

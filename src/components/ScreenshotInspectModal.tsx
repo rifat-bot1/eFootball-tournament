@@ -29,8 +29,8 @@ export const ScreenshotInspectModal: React.FC<ScreenshotInspectModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-5">
-      <div className="relative flex flex-col w-full max-w-4xl max-h-[95vh] rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md pt-[max(env(safe-area-inset-top,0px),36px)] pb-[max(env(safe-area-inset-bottom,0px),50px)] px-3 sm:p-5 overflow-y-auto">
+      <div className="relative flex flex-col w-full max-w-4xl max-h-[90vh] rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl overflow-hidden my-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/90 px-4 py-3 flex-shrink-0">

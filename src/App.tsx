@@ -318,8 +318,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Container */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-3 sm:px-6 py-6 pb-20">
+      {/* Main Container with generous bottom safe area */}
+      <main className="flex-1 mx-auto w-full max-w-7xl px-2.5 sm:px-6 py-3 sm:py-6 pb-[max(calc(env(safe-area-inset-bottom,0px)+120px),130px)] sm:pb-24">
         
         {activeTab === 'dashboard' && (
           <DashboardView

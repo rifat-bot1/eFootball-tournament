@@ -169,9 +169,9 @@ export const Header: React.FC<HeaderProps> = ({
   const currentTabLabel = navItems.find(item => item.id === activeTab)?.label || 'Home';
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-[#080c14]/95 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-[#080c14]/95 backdrop-blur-md safe-top-padding sm:pt-0">
       {/* Top Bar */}
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2.5 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-2.5 sm:px-6 py-2 sm:py-2.5">
         
         {/* Brand / Logo */}
         <div 
