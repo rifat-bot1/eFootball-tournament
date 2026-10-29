@@ -442,43 +442,27 @@ export function subscribeToTournaments(callback: (tournaments: Tournament[]) => 
   const initial = getTournaments();
   callback(initial);
 
-  // Auto-sync any existing local tournaments (like newly created tournaments) to Firestore
-  if (initial.length > 0) {
-    initial.forEach(t => {
-      syncTournamentToFirestore(t).catch(() => {});
-    });
-  }
-
   // 2. Real-time Firestore snapshot listener
   try {
     const colRef = collection(db, 'tournaments');
     const unsubscribe = onSnapshot(
       colRef,
       (snapshot) => {
-        if (!snapshot.empty) {
-          const cloudList: Tournament[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as Tournament;
-            if (data && data.id && !['tour_01', 'tour_02', 'tour_03'].includes(data.id)) {
-              cloudList.push({
-                ...data,
-                bannerUrl: (!data.bannerUrl || data.bannerUrl.includes('unsplash.com')) ? './images/banner-stadium.svg' : data.bannerUrl
-              });
-            }
-          });
-          // Sort newest tournaments first
-          cloudList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-          
-          saveTournaments(cloudList);
-          callback(cloudList);
-        } else {
-          // If Firestore is empty but we have local tournaments, seed them to Firestore
-          const local = getTournaments();
-          if (local.length > 0) {
-            local.forEach(t => syncTournamentToFirestore(t).catch(() => {}));
+        const cloudList: Tournament[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as Tournament;
+          if (data && data.id && !['tour_01', 'tour_02', 'tour_03'].includes(data.id)) {
+            cloudList.push({
+              ...data,
+              bannerUrl: (!data.bannerUrl || data.bannerUrl.includes('unsplash.com')) ? './images/banner-stadium.svg' : data.bannerUrl
+            });
           }
-          callback(local);
-        }
+        });
+        // Sort newest tournaments first
+        cloudList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        
+        saveTournaments(cloudList);
+        callback(cloudList);
       },
       (error) => {
         console.warn('Tournaments snapshot listener:', error);
@@ -499,32 +483,20 @@ export function subscribeToFixtures(callback: (fixtures: MatchFixture[]) => void
   const initial = getFixtures();
   callback(initial);
 
-  if (initial.length > 0) {
-    initial.forEach(f => syncFixtureToFirestore(f).catch(() => {}));
-  }
-
   try {
     const colRef = collection(db, 'fixtures');
     const unsubscribe = onSnapshot(
       colRef,
       (snapshot) => {
-        if (!snapshot.empty) {
-          const cloudList: MatchFixture[] = [];
-          snapshot.forEach((docSnap) => {
-            const data = docSnap.data() as MatchFixture;
-            if (data && data.id && !data.id.startsWith('fix_10') && !data.id.startsWith('fix_20')) {
-              cloudList.push(data);
-            }
-          });
-          saveFixtures(cloudList);
-          callback(cloudList);
-        } else {
-          const local = getFixtures();
-          if (local.length > 0) {
-            local.forEach(f => syncFixtureToFirestore(f).catch(() => {}));
+        const cloudList: MatchFixture[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data() as MatchFixture;
+          if (data && data.id && !data.id.startsWith('fix_10') && !data.id.startsWith('fix_20')) {
+            cloudList.push(data);
           }
-          callback(local);
-        }
+        });
+        saveFixtures(cloudList);
+        callback(cloudList);
       },
       (error) => {
         console.warn('Fixtures snapshot listener:', error);
@@ -785,15 +757,28 @@ export function updateTournament(tournamentId: string, updates: Partial<Tourname
 /**
  * Delete Tournament and associated fixtures
  */
-export function deleteTournament(tournamentId: string): boolean {
+export async function deleteTournament(tournamentId: string): Promise<boolean> {
+  // 1. Delete from local state immediately
   const tournaments = getTournaments();
   const filtered = tournaments.filter(t => t.id !== tournamentId);
   saveTournaments(filtered);
-  deleteTournamentFromFirestore(tournamentId).catch(() => {});
 
+  // 2. Delete associated fixtures from local state
   const fixtures = getFixtures();
+  const deletedFixtures = fixtures.filter(f => f.tournamentId === tournamentId);
   const remainingFixtures = fixtures.filter(f => f.tournamentId !== tournamentId);
   saveFixtures(remainingFixtures);
+
+  // 3. Delete from Firestore permanently
+  try {
+    await deleteTournamentFromFirestore(tournamentId);
+    for (const fix of deletedFixtures) {
+      await deleteFixtureFromFirestore(fix.id).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('Failed to delete tournament in cloud:', err);
+  }
+
   return true;
 }
 

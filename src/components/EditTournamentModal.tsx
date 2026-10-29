@@ -106,7 +106,7 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
   };
 
   const handleDelete = () => {
-    if (confirm(`Are you sure you want to delete tournament "${tournament.title}"? This cannot be undone.`)) {
+    if (confirm(`⚠️ আপনি কি নিশ্চিত "${tournament.title}" টুর্নামেন্টটি ডিলিট করতে চান? এটি টুর্নামেন্ট ও এর ম্যাচসমূহ স্থায়ীভাবে মুছে ফেলবে।\n\nAre you sure you want to delete tournament "${tournament.title}"? This cannot be undone.`)) {
       if (onDeleteTournament) {
         onDeleteTournament(tournament.id);
         onClose();

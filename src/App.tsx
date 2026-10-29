@@ -286,10 +286,17 @@ export default function App() {
     setTournaments(getTournaments());
   };
 
-  const handleDeleteTournament = (tournamentId: string) => {
-    deleteTournament(tournamentId);
-    setTournaments(getTournaments());
+  const handleDeleteTournament = async (tournamentId: string) => {
+    await deleteTournament(tournamentId);
+    const updated = getTournaments();
+    setTournaments(updated);
     setFixtures(getFixtures());
+    setSelectedTournamentId(prev => {
+      if (prev === tournamentId) {
+        return updated[0]?.id || '';
+      }
+      return prev;
+    });
   };
 
   const handleOverrideMatchResult = (

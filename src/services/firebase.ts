@@ -25,6 +25,7 @@ import {
   getDoc, 
   getDocs, 
   updateDoc, 
+  deleteDoc,
   query, 
   where,
   onSnapshot,
@@ -173,10 +174,10 @@ export async function syncTournamentToFirestore(tournament: Tournament): Promise
  */
 export async function deleteTournamentFromFirestore(tournamentId: string): Promise<void> {
   try {
-    const { deleteDoc } = await import('firebase/firestore');
     await deleteDoc(doc(db, 'tournaments', tournamentId));
   } catch (err) {
     console.warn('Failed to delete tournament from Firestore:', err);
+    throw err;
   }
 }
 
@@ -196,7 +197,6 @@ export async function syncFixtureToFirestore(fixture: MatchFixture): Promise<voi
  */
 export async function deleteFixtureFromFirestore(fixtureId: string): Promise<void> {
   try {
-    const { deleteDoc } = await import('firebase/firestore');
     await deleteDoc(doc(db, 'fixtures', fixtureId));
   } catch (err) {
     console.warn('Failed to delete fixture from Firestore:', err);

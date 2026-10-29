@@ -616,13 +616,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                     {/* Action Buttons */}
                     <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-1.5">
                         <button
                           onClick={() => setEditingTournament(tour)}
                           className="flex items-center justify-center gap-1 rounded-xl bg-slate-800 hover:bg-slate-700 py-2 text-xs font-bold text-white transition border border-slate-700"
+                          title="Customize all tournament settings"
                         >
                           <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Customize All</span>
+                          <span>Edit</span>
                         </button>
 
                         <button
@@ -631,9 +632,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             setActiveAdminSubTab('matches');
                           }}
                           className="flex items-center justify-center gap-1 rounded-xl bg-sky-950/60 hover:bg-sky-900/60 py-2 text-xs font-bold text-sky-300 transition border border-sky-800/60"
+                          title="View and generate pairings"
                         >
                           <Shuffle className="w-3.5 h-3.5 text-sky-400" />
                           <span>Pairings ({tourFixtures.length})</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`⚠️ Are you sure you want to delete tournament "${tour.title}"? This will permanently delete the tournament and its matches. (আপনি কি নিশ্চিত "${tour.title}" টুর্নামেন্টটি ডিলিট করতে চান?)`)) {
+                              onDeleteTournament?.(tour.id);
+                            }
+                          }}
+                          className="flex items-center justify-center gap-1 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 py-2 text-xs font-bold text-rose-300 transition border border-rose-800/60"
+                          title="Delete tournament permanently"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                          <span>Delete</span>
                         </button>
                       </div>
 
@@ -1717,6 +1732,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit / Customize Tournament Modal */}
+      {editingTournament && (
+        <EditTournamentModal
+          isOpen={Boolean(editingTournament)}
+          onClose={() => setEditingTournament(null)}
+          tournament={editingTournament}
+          onUpdateTournament={(tourId, updates) => {
+            onUpdateTournament?.(tourId, updates);
+            setEditingTournament(null);
+          }}
+          onDeleteTournament={(tourId) => {
+            onDeleteTournament?.(tourId);
+            setEditingTournament(null);
+          }}
+        />
       )}
 
     </div>

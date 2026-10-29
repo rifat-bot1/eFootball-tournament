@@ -25,7 +25,8 @@ import {
   History,
   Coins,
   Wallet,
-  Edit3
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { Tournament, UserProfile, LeaderboardEntry, MatchFixture } from '../types/tournament';
 import confetti from 'canvas-confetti';
@@ -467,7 +468,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span>{tour.registeredPlayerIds.length}/{tour.maxPlayers}</span>
                     </div>
 
-                    {/* Admin Quick Actions: Change Banner & Customize Tournament */}
+                    {/* Admin Quick Actions: Customize Fee, Change Banner & Delete Tournament */}
                     {isUserAdmin(currentUser) && (
                       <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 z-20">
                         <button
@@ -494,6 +495,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         >
                           <ImageIcon className="w-3.5 h-3.5 text-[#00ff87]" />
                           <span>Banner</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`⚠️ আপনি কি নিশ্চিত "${tour.title}" টুর্নামেন্টটি মুছে ফেলতে চান? এটি টুর্নামেন্ট এবং এর সকল ম্যাচ ফিক্সচার স্থায়ীভাবে ডিলিট করে দেবে।\n\nAre you sure you want to delete "${tour.title}"?`)) {
+                              onDeleteTournament?.(tour.id);
+                              setJoinedAlert(`Tournament "${tour.title}" deleted.`);
+                              setTimeout(() => setJoinedAlert(null), 3000);
+                            }
+                          }}
+                          className="rounded-lg bg-rose-600/95 backdrop-blur-md px-2.5 py-1 text-[11px] font-black text-white hover:bg-rose-500 border border-rose-400/80 flex items-center gap-1 shadow-lg transition active:scale-95 touch-manipulation"
+                          title="Delete tournament permanently"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     )}
