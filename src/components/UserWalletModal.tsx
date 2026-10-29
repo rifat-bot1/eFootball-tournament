@@ -199,10 +199,10 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-white">
-                My Wallet &amp; Balance (ব্যালেন্স ও ওয়ালেট)
+                My Wallet
               </h2>
               <p className="text-[11px] text-slate-400">
-                {currentUser.name} • In-Game ID: <span className="font-mono text-[#00ff87]">{currentUser.efootballId}</span>
+                {currentUser.name} • ID: <span className="font-mono text-[#00ff87]">{currentUser.efootballId}</span>
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                Available Wallet Balance (বর্তমান ব্যালেন্স)
+                Wallet Balance
               </span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
@@ -245,7 +245,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                 }`}
               >
                 <ArrowDownLeft className="w-3.5 h-3.5" />
-                <span>Deposit (জমা)</span>
+                <span>Deposit</span>
               </button>
               <button
                 onClick={() => {
@@ -259,7 +259,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                 }`}
               >
                 <ArrowUpRight className="w-3.5 h-3.5" />
-                <span>Withdraw (উত্তোলন)</span>
+                <span>Withdraw</span>
               </button>
             </div>
           </div>
@@ -278,7 +278,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                 : 'border-transparent text-slate-400 hover:text-white'
             }`}
           >
-            Deposit (টাকা জমা করুন)
+            Deposit
           </button>
           <button
             onClick={() => {
@@ -291,7 +291,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                 : 'border-transparent text-slate-400 hover:text-white'
             }`}
           >
-            Withdraw (টাকা উত্তোলন)
+            Withdraw
           </button>
           <button
             onClick={() => {
@@ -305,7 +305,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>History (লেনদেন হিস্ট্রি)</span>
+            <span>History</span>
             {transactions.length > 0 && (
               <span className="rounded-full bg-slate-800 px-1.5 py-0.2 text-[10px] text-slate-300">
                 {transactions.length}
@@ -338,7 +338,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                   <Coins className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Official bKash &amp; Nagad Send Money Number:</span>
+                  <span>Send Money (bKash / Nagad)</span>
                 </span>
                 <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-black text-[#00ff87] uppercase">
                   Personal
@@ -349,9 +349,6 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-base sm:text-lg font-black text-amber-300 tracking-wider">
                     {OFFICIAL_PAYMENT_NUMBER}
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    (bKash / Nagad)
                   </span>
                 </div>
                 <button
@@ -364,16 +361,15 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                 </button>
               </div>
 
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                ১. আপনার bKash বা Nagad অ্যাপ ওপেন করে <strong>Send Money</strong> করুন ওপরের নাম্বারে।<br />
-                ২. টাকা পাঠানো সম্পন্ন হলে নিচে টাকার পরিমাণ, মেথড, আপনার প্রেরক মোবাইল নম্বর ও TrxID লিখে সাবমিট করুন।
+              <p className="text-[11px] text-slate-400">
+                ১. ওপরের নম্বরে Send Money করুন। ২. নিচে তথ্য দিয়ে সাবমিট করুন।
               </p>
             </div>
 
             {/* Select Method */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Payment Method (পেমেন্ট মাধ্যম)
+                Method
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -386,7 +382,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                   }`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#e2136e]" />
-                  <span>bKash (বিকাশ)</span>
+                  <span>bKash</span>
                 </button>
                 <button
                   type="button"
@@ -398,7 +394,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                   }`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#f7941d]" />
-                  <span>Nagad (নগদ)</span>
+                  <span>Nagad</span>
                 </button>
               </div>
             </div>
@@ -406,7 +402,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             {/* Quick Amount Pills */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Deposit Amount (টাকার পরিমাণ)
+                Amount (৳)
               </label>
               <div className="flex items-center gap-2 mb-2">
                 {['50', '100', '200', '500'].map((amt) => (
@@ -432,7 +428,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                   required
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  placeholder="Enter custom amount"
+                  placeholder="Enter amount"
                   className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-8 pr-3 py-2 text-xs sm:text-sm font-bold text-white focus:border-[#00ff87] focus:outline-none"
                 />
               </div>
@@ -441,14 +437,14 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             {/* Sender Number */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Your Sender Mobile Number (যে নম্বর থেকে টাকা পাঠিয়েছেন) <span className="text-rose-400">*</span>
+                Sender Number <span className="text-rose-400">*</span>
               </label>
               <input
                 type="tel"
                 required
                 value={senderNumber}
                 onChange={(e) => setSenderNumber(e.target.value)}
-                placeholder="e.g. 017XXXXXXXX"
+                placeholder="017XXXXXXXX"
                 className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs sm:text-sm font-mono text-white focus:border-[#00ff87] focus:outline-none"
               />
             </div>
@@ -463,12 +459,9 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                 required
                 value={trxId}
                 onChange={(e) => setTrxId(e.target.value)}
-                placeholder="e.g. BL928X4P99"
+                placeholder="TrxID"
                 className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs sm:text-sm font-mono uppercase text-white focus:border-[#00ff87] focus:outline-none"
               />
-              <p className="text-[10px] text-slate-500 mt-1">
-                টাকা পাঠানোর পর বিকাশ বা নগদ মেসেজে আসা TrxID টি হুবহু এখানে দিন।
-              </p>
             </div>
 
             {/* Submit */}
@@ -482,7 +475,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
               ) : (
                 <Send className="w-4 h-4" />
               )}
-              <span>{isSubmitting ? 'Submitting...' : 'Submit Deposit Request (টাকা অ্যাড রিকোয়েস্ট)'}</span>
+              <span>{isSubmitting ? 'Submitting...' : 'Submit Deposit'}</span>
             </button>
           </form>
         )}
@@ -490,16 +483,10 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
         {/* Tab 2: Withdraw */}
         {activeTab === 'withdraw' && (
           <form onSubmit={handleWithdrawSubmit} className="p-4 sm:p-5 space-y-4">
-            <div className="rounded-xl bg-sky-950/30 border border-sky-500/40 p-3 text-xs text-sky-200">
-              <p className="leading-relaxed">
-                আপনার বর্তমান ওয়ালেট ব্যালেন্স থেকে বিকাশ অথবা নগদে ক্যাশআউট / উত্তোলন রিকোয়েস্ট পাঠান। এডমিন যাচাই করে আপনার একাউন্টে টাকা পাঠিয়ে দেবে।
-              </p>
-            </div>
-
             {/* Select Method */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Withdrawal Method (টাকা নেওয়ার মাধ্যম)
+                Method
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -512,7 +499,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                   }`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#e2136e]" />
-                  <span>bKash (বিকাশ)</span>
+                  <span>bKash</span>
                 </button>
                 <button
                   type="button"
@@ -524,7 +511,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                   }`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#f7941d]" />
-                  <span>Nagad (নগদ)</span>
+                  <span>Nagad</span>
                 </button>
               </div>
             </div>
@@ -533,7 +520,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Withdrawal Amount (উত্তোলনের পরিমাণ) <span className="text-rose-400">*</span>
+                  Amount (৳) <span className="text-rose-400">*</span>
                 </label>
                 <span className="text-[10px] text-slate-400">
                   Available: ৳{currentBalance}
@@ -557,14 +544,14 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             {/* Receiver Mobile Number */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Your Receiver Mobile Number (যে নম্বরে টাকা নেবেন) <span className="text-rose-400">*</span>
+                Receiver Number <span className="text-rose-400">*</span>
               </label>
               <input
                 type="tel"
                 required
                 value={receiverNumber}
                 onChange={(e) => setReceiverNumber(e.target.value)}
-                placeholder="e.g. 017XXXXXXXX"
+                placeholder="017XXXXXXXX"
                 className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs sm:text-sm font-mono text-white focus:border-[#00e5ff] focus:outline-none"
               />
             </div>
@@ -580,7 +567,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
               ) : (
                 <ArrowUpRight className="w-4 h-4" />
               )}
-              <span>{isSubmitting ? 'Submitting...' : 'Request Withdrawal (টাকা উত্তোলন রিকোয়েস্ট)'}</span>
+              <span>{isSubmitting ? 'Submitting...' : 'Submit Withdraw'}</span>
             </button>
           </form>
         )}
@@ -591,7 +578,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             {transactions.length === 0 ? (
               <div className="text-center py-10 text-slate-500 space-y-2">
                 <Clock className="w-10 h-10 mx-auto opacity-40" />
-                <p className="text-xs">কোনো লেনদেন রেকর্ড পাওয়া যায়নি।</p>
+                <p className="text-xs">কোনো লেনদেন রেকর্ড নেই</p>
               </div>
             ) : (
               transactions.map((tx) => (

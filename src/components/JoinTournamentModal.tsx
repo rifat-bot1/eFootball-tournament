@@ -138,28 +138,6 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
           </button>
         </div>
 
-        {/* Telegram Notice Banner */}
-        <div className="mx-4 mt-4 sm:mx-5 sm:mt-5 flex items-start gap-2.5 rounded-xl border border-sky-500/30 bg-sky-950/40 p-3 text-xs text-sky-200">
-          <Send className="w-4 h-4 text-sky-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <span className="font-bold text-sky-300 block mb-0.5">
-              📢 Telegram Live Notification:
-            </span>
-            <p className="text-[11px] text-slate-300">
-              আপনি জয়েন করার সাথে সাথেই আপনার <strong>নাম, eFootball ID, ক্লাব ও ডিটেইলস</strong> আমাদের অফিসিয়াল{' '}
-              <a 
-                href="https://t.me/eFootballTournamentBD" 
-                target="_blank" 
-                rel="noreferrer"
-                className="text-sky-400 underline font-bold"
-              >
-                @eFootballTournamentBD
-              </a>{' '}
-              টেলিগ্রাম চ্যানেলে নোটিফিকেশন হিসেবে চলে যাবে।
-            </p>
-          </div>
-        </div>
-
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-3.5">
           {error && (
@@ -190,22 +168,22 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
               </strong>
             </div>
             <div className="border-l border-slate-800">
-              <span className="text-slate-500 block">Match Time</span>
+              <span className="text-slate-500 block">Duration</span>
               <strong className="text-[#00ff87]">{tournament.rules.matchLength}</strong>
             </div>
           </div>
 
           {/* Entry Fee & Wallet Deduction Card */}
           {tournament.entryFee && tournament.entryFee > 0 ? (
-            <div className={`rounded-xl p-3.5 text-xs space-y-2.5 border ${
+            <div className={`rounded-xl p-3 text-xs space-y-2 border ${
               hasEnoughBalance 
                 ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200' 
                 : 'bg-amber-950/40 border-amber-500/50 text-amber-200'
             }`}>
-              <div className="flex items-center justify-between font-bold border-b border-white/10 pb-1.5">
+              <div className="flex items-center justify-between font-bold">
                 <span className="flex items-center gap-1.5">
                   <Coins className="w-4 h-4 text-amber-400" />
-                  <span>Entry Fee Required: ৳{tournament.entryFee} BDT</span>
+                  <span>Fee: ৳{tournament.entryFee}</span>
                 </span>
                 <span className="font-mono text-white text-[11px]">
                   Wallet: <strong className={hasEnoughBalance ? 'text-[#00ff87]' : 'text-rose-400 font-bold'}>৳{userBalance}</strong>
@@ -213,19 +191,15 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
               </div>
 
               {hasEnoughBalance ? (
-                <div className="flex items-center gap-2 text-emerald-300">
-                  <Check className="w-4 h-4 text-[#00ff87] shrink-0" />
-                  <span className="text-[11px] leading-relaxed">
-                    ✓ আপনার ওয়ালেট ব্যালেন্স পর্যাপ্ত আছে। জয়েন করার সাথে সাথে আপনার ব্যালেন্স থেকে ৳{tournament.entryFee} স্বয়ংক্রিয়ভাবে কেটে নেওয়া হবে।
-                  </span>
+                <div className="flex items-center gap-1.5 text-emerald-300 text-[11px]">
+                  <Check className="w-3.5 h-3.5 text-[#00ff87] shrink-0" />
+                  <span>Wallet থেকে ৳{tournament.entryFee} স্বয়ংক্রিয়ভাবে কাটা হবে</span>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-amber-300">
-                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="text-[11px] leading-relaxed">
-                      ⚠️ অপর্যাপ্ত ব্যালেন্স! টুর্নামেন্টে জয়েন করতে ৳{tournament.entryFee} প্রয়োজন, কিন্তু আপনার ওয়ালেটে আছে ৳{userBalance}।
-                    </span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-amber-300 text-[11px]">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>অপর্যাপ্ত ব্যালেন্স (৳{tournament.entryFee} প্রয়োজন)</span>
                   </div>
                   {onOpenDeposit && (
                     <button
@@ -234,10 +208,10 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
                         onClose();
                         onOpenDeposit();
                       }}
-                      className="w-full py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-bold hover:brightness-110 transition flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                      className="w-full py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-bold hover:brightness-110 transition flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                     >
                       <Wallet className="w-3.5 h-3.5" />
-                      <span>Deposit Money / ব্যালেন্সে টাকা যোগ করুন</span>
+                      <span>Deposit</span>
                     </button>
                   )}
                 </div>
@@ -246,14 +220,14 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
           ) : (
             <div className="rounded-xl bg-emerald-950/30 border border-emerald-500/30 p-2.5 text-[11px] text-emerald-300 flex items-center gap-2">
               <Check className="w-4 h-4 text-[#00ff87] shrink-0" />
-              <span><strong>Free Entry Tournament:</strong> ৳০ Entry Fee. Open for all registered community contenders!</span>
+              <span>Free Entry (৳০)</span>
             </div>
           )}
 
           {/* Player Name */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-              Player Name / গেমার নাম <span className="text-rose-400">*</span>
+              Player Name <span className="text-rose-400">*</span>
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
@@ -262,22 +236,17 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
                 required
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="e.g. Mohammad Rifat"
-                className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2.5 text-xs sm:text-sm font-semibold text-white focus:border-[#00ff87] focus:outline-none"
+                placeholder="Name"
+                className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-9 pr-3 py-2 text-xs sm:text-sm font-semibold text-white focus:border-[#00ff87] focus:outline-none"
               />
             </div>
           </div>
 
           {/* eFootball In-Game ID */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                eFootball In-Game ID <span className="text-rose-400">*</span>
-              </label>
-              <span className="text-[10px] text-emerald-400 font-medium">
-                (আইডি সব সময় সেভ থাকবে)
-              </span>
-            </div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+              eFootball ID <span className="text-rose-400">*</span>
+            </label>
             <div className="relative">
               <Gamepad2 className="w-4 h-4 text-[#00ff87] absolute left-3 top-3" />
               <input
@@ -285,40 +254,37 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
                 required
                 value={efootballId}
                 onChange={(e) => setEfootballId(e.target.value)}
-                placeholder="e.g. 6595302089"
-                className="w-full rounded-xl bg-slate-950 border border-[#00ff87]/40 pl-9 pr-3 py-2.5 text-xs sm:text-sm font-mono font-bold text-white focus:border-[#00ff87] focus:outline-none"
+                placeholder="6595302089"
+                className="w-full rounded-xl bg-slate-950 border border-[#00ff87]/40 pl-9 pr-3 py-2 text-xs sm:text-sm font-mono font-bold text-white focus:border-[#00ff87] focus:outline-none"
               />
             </div>
-            <p className="text-[10px] text-slate-500 mt-1">
-              Opponent will copy this ID to create the Friend Match in eFootball Mobile.
-            </p>
           </div>
 
           {/* Club & Division */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Favorite Club / টিম
+                Club
               </label>
               <input
                 type="text"
                 value={favoriteClub}
                 onChange={(e) => setFavoriteClub(e.target.value)}
-                placeholder="e.g. FC Barcelona"
+                placeholder="FC Barcelona"
                 className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
               />
             </div>
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                In-Game Division
+                Division
               </label>
               <select
                 value={division}
                 onChange={(e) => setDivision(e.target.value)}
                 className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs font-semibold text-white focus:border-[#00ff87] focus:outline-none"
               >
-                <option value="Division 1">Division 1 (Top Tier)</option>
+                <option value="Division 1">Division 1</option>
                 <option value="Division 2">Division 2</option>
                 <option value="Division 3">Division 3</option>
                 <option value="Division 4">Division 4</option>
@@ -331,7 +297,7 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                Email Address
+                Email
               </label>
               <div className="relative">
                 <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
@@ -339,7 +305,7 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="rfrifatbs@gmail.com"
+                  placeholder="email@example.com"
                   className="w-full rounded-xl bg-slate-950 border border-slate-700 pl-8 pr-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
                 />
               </div>
@@ -347,7 +313,7 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                WhatsApp / Phone (Optional)
+                Phone
               </label>
               <div className="relative">
                 <Phone className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
@@ -367,14 +333,14 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition"
+              className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-7 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-7 py-2 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

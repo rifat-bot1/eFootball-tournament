@@ -171,15 +171,12 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black text-white">
-                  Users &amp; Balance Management (ইউজার ও ব্যালেন্স কন্ট্রোল)
+                  Users &amp; Balances
                 </h2>
                 <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-amber-300 border border-amber-500/30">
-                  Admin Exclusive
+                  Admin
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                সকল প্লেয়ারদের তথ্য, ওয়ালেট ব্যালেন্স এডিট এবং ডিপোজিট/উত্তোলন ট্রানজেকশন ভেরিফিকেশন
-              </p>
             </div>
           </div>
           <button
@@ -202,7 +199,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
         <div className="grid grid-cols-3 gap-2.5 sm:gap-4 p-3 sm:p-4 mx-4 mt-3 sm:mx-6 rounded-2xl bg-slate-950/80 border border-slate-800 text-center flex-shrink-0">
           <div>
             <span className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-bold block">
-              Total Users (মোট ইউজার)
+              Total Users
             </span>
             <span className="text-lg sm:text-2xl font-black text-white mt-0.5 block">
               {allUsers.length}
@@ -210,7 +207,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
           </div>
           <div className="border-l border-slate-800">
             <span className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-bold block">
-              Ecosystem Balance
+              Total Balance
             </span>
             <span className="text-lg sm:text-2xl font-black text-[#00ff87] mt-0.5 block font-mono">
               ৳{totalEcosystemBalance}
@@ -218,7 +215,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
           </div>
           <div className="border-l border-slate-800">
             <span className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-bold block">
-              Pending Requests
+              Pending
             </span>
             <span className={`text-lg sm:text-2xl font-black mt-0.5 block ${
               pendingRequests.length > 0 ? 'text-amber-400 animate-pulse' : 'text-slate-400'
@@ -240,7 +237,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>All Users ({allUsers.length})</span>
+              <span>Users ({allUsers.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('requests')}
@@ -251,7 +248,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Pending Requests</span>
+              <span>Requests</span>
               {pendingRequests.length > 0 && (
                 <span className="rounded-full bg-amber-500 text-slate-950 px-1.5 py-0.2 text-[10px] font-black">
                   {pendingRequests.length}
@@ -267,7 +264,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
               }`}
             >
               <Coins className="w-3.5 h-3.5" />
-              <span>All Transactions</span>
+              <span>Transactions</span>
             </button>
           </div>
 
@@ -395,8 +392,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
             {pendingRequests.length === 0 ? (
               <div className="text-center py-14 text-slate-500 space-y-2">
                 <CheckCircle2 className="w-12 h-12 text-[#00ff87] mx-auto opacity-70 mb-2" />
-                <h3 className="text-sm font-bold text-white">No Pending Requests!</h3>
-                <p className="text-xs">সব ডিপোজিট এবং উত্তোলন রিকোয়েস্ট ইতিমধ্যে যাচাই ও অনুমোদিত হয়েছে।</p>
+                <h3 className="text-sm font-bold text-white">No Pending Requests</h3>
               </div>
             ) : (
               pendingRequests.map((req) => (
@@ -419,7 +415,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
                           <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
                             req.type === 'deposit' ? 'bg-emerald-500/20 text-[#00ff87]' : 'bg-sky-500/20 text-sky-400'
                           }`}>
-                            {req.type === 'deposit' ? 'DEPOSIT REQUEST' : 'WITHDRAWAL REQUEST'}
+                            {req.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
                           </span>
                           <span className="text-xs font-bold text-white">
                             {req.userName}
@@ -458,7 +454,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-400">Transaction ID (TrxID):</span>
+                          <span className="text-slate-400">TrxID:</span>
                           <span className="font-mono font-black text-[#00ff87] flex items-center gap-1">
                             {req.transactionId}
                             <button onClick={() => handleCopy(req.transactionId || '')} className="text-slate-400 hover:text-white">
@@ -471,7 +467,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
 
                     {req.type === 'withdraw' && (
                       <div className="col-span-2 flex items-center justify-between">
-                        <span className="text-slate-400">Send money to Receiver Number:</span>
+                        <span className="text-slate-400">Send money to:</span>
                         <span className="font-mono font-bold text-sky-400 text-sm flex items-center gap-1">
                           {req.receiverNumber} ({req.method?.toUpperCase()})
                           <button onClick={() => handleCopy(req.receiverNumber || '')} className="text-slate-400 hover:text-white">
@@ -489,7 +485,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
                       className="px-3 py-1.5 rounded-xl border border-rose-500/40 bg-rose-950/30 text-rose-300 hover:bg-rose-900/50 text-xs font-bold transition flex items-center gap-1"
                     >
                       <XCircle className="w-3.5 h-3.5" />
-                      <span>Reject (বাতিল)</span>
+                      <span>Reject</span>
                     </button>
 
                     <button
@@ -497,7 +493,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
                       className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-[#00ff87] to-emerald-500 text-slate-950 text-xs font-black uppercase tracking-wider hover:brightness-110 transition shadow-md shadow-[#00ff87]/20 flex items-center gap-1.5"
                     >
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      <span>Approve (অনুমোদন করুন)</span>
+                      <span>Approve</span>
                     </button>
                   </div>
                 </div>
@@ -511,7 +507,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
           <div className="p-4 sm:p-6 overflow-y-auto space-y-2.5 flex-1">
             {transactions.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
-                <p className="text-xs">কোনো ট্রানজেকশন লগ নেই।</p>
+                <p className="text-xs">কোনো ট্রানজেকশন নেই</p>
               </div>
             ) : (
               transactions.map((tx) => (
@@ -585,7 +581,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
               <div className="flex items-center gap-2">
                 <Coins className="w-5 h-5 text-amber-400" />
                 <h3 className="text-sm font-bold text-white">
-                  Edit Wallet Balance (ব্যালেন্স এডিট)
+                  Edit Balance
                 </h3>
               </div>
               <button
@@ -602,7 +598,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
                 <strong className="text-white">{editingUser.name}</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">eFootball ID:</span>
+                <span className="text-slate-400">ID:</span>
                 <span className="font-mono text-[#00ff87]">{editingUser.efootballId}</span>
               </div>
               <div className="flex justify-between">
@@ -614,7 +610,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
             <form onSubmit={handleSaveBalance} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                  New Balance (নতুন ব্যালেন্স পরিমাণ ৳)
+                  New Balance (৳)
                 </label>
                 <input
                   type="number"
@@ -643,19 +639,19 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
                   onClick={() => setNewBalanceInput('0')}
                   className="py-1 px-2.5 rounded-lg bg-rose-950/40 border border-rose-900/50 hover:bg-rose-900/50 text-xs font-bold text-rose-300 transition"
                 >
-                  Reset (0)
+                  Reset
                 </button>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
-                  Reason / নোট (Optional)
+                  Reason (Optional)
                 </label>
                 <input
                   type="text"
                   value={adjustmentReason}
                   onChange={(e) => setAdjustmentReason(e.target.value)}
-                  placeholder="e.g. Tournament 1st Prize Reward or Manual Deposit"
+                  placeholder="e.g. Prize Reward or Manual Deposit"
                   className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
                 />
               </div>
@@ -674,7 +670,7 @@ export const AdminUsersModal: React.FC<AdminUsersModalProps> = ({
                   className="flex-1 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-[#00ff87] text-slate-950 text-xs font-black uppercase tracking-wider hover:brightness-110 transition shadow-md flex items-center justify-center gap-1"
                 >
                   {isSavingBalance ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  <span>Save Balance</span>
+                  <span>Save</span>
                 </button>
               </div>
             </form>

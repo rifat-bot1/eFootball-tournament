@@ -45,33 +45,29 @@ export const RulesView: React.FC<RulesViewProps> = ({
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-xl bg-[#00ff87]/10 border border-[#00ff87]/30 px-3 py-1 text-xs font-bold text-[#00ff87]">
               <BookOpen className="w-4 h-4" />
-              <span>Official Tournament Regulations</span>
+              <span>Official Rules</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Rules &amp; Participant Guidelines
+              Tournament Rules
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              To ensure a competitive, fun, and fair playing arena for all eFootball players, 
-              please read and adhere to our match settings, fair play standards, and screenshot verification rules.
-            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <button
               onClick={onNavigateToSubmit}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-5 py-3 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 shadow-lg shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
             >
               <Upload className="w-4 h-4" />
-              <span>Submit Result</span>
+              <span>Submit</span>
             </button>
             <a
               href="https://t.me/eFootballTournamentBD"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-500/40 bg-sky-950/40 px-5 py-3 text-xs font-bold text-sky-400 hover:bg-sky-500/20 hover:text-white transition shadow-sm"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-500/40 bg-sky-950/40 px-5 py-2.5 text-xs font-bold text-sky-400 hover:bg-sky-500/20 hover:text-white transition shadow-sm"
             >
               <Send className="w-4 h-4" />
-              <span>Telegram Channel</span>
+              <span>Telegram</span>
               <ExternalLink className="w-3 h-3 opacity-70" />
             </a>
           </div>
@@ -87,7 +83,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
                 : 'bg-slate-950/70 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            All Guidelines
+            All
           </button>
           <button
             onClick={() => setActiveCategory('setup')}
@@ -97,7 +93,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
                 : 'bg-slate-950/70 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            Match Setup &amp; Lobby
+            Setup
           </button>
           <button
             onClick={() => setActiveCategory('fairplay')}
@@ -107,7 +103,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
                 : 'bg-slate-950/70 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            Fair Play &amp; Conduct
+            Fair Play
           </button>
           <button
             onClick={() => setActiveCategory('screenshot')}
@@ -117,7 +113,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
                 : 'bg-slate-950/70 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            Screenshot Proof (Crucial)
+            Screenshots
           </button>
           <button
             onClick={() => setActiveCategory('points')}
@@ -127,7 +123,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
                 : 'bg-slate-950/70 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
-            Points &amp; Leaderboard
+            Points
           </button>
           <button
             onClick={() => setActiveCategory('entryfee')}
@@ -138,7 +134,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
             }`}
           >
             <Coins className="w-3.5 h-3.5 text-amber-400" />
-            <span>Entry Fee &amp; Prize Rules</span>
+            <span>Entry Fee</span>
           </button>
         </div>
       </div>

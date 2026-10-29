@@ -324,13 +324,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-              <span>Admin Master Control Panel</span>
+              <span>Admin Panel</span>
               <span className="rounded bg-amber-400/20 text-amber-300 text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider border border-amber-400/40">
                 Super Admin
               </span>
             </h1>
             <p className="text-xs text-slate-400">
-              Logged in as <strong className="text-amber-300">{currentUser.name}</strong> • Full control over entry fees, tournaments, settings, and notices
+              Admin: <strong className="text-amber-300">{currentUser.name}</strong>
             </p>
           </div>
         </div>
@@ -342,10 +342,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-950/40 px-3 py-2 text-xs font-bold text-sky-400 hover:bg-sky-500/20 hover:border-sky-400 hover:text-white transition"
-            title="Open Official Telegram Channel"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>Telegram Channel</span>
+            <span>Telegram</span>
           </a>
 
           <button
@@ -353,7 +352,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-4 py-2 text-xs font-black text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Tournament</span>
+            <span>Create</span>
           </button>
         </div>
       </div>
@@ -363,7 +362,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-sky-950/40 border border-sky-500/40 p-4 text-sky-200 text-xs">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span><strong>System Notice:</strong> {recentTelegramNotification.text}</span>
+            <span><strong>Notice:</strong> {recentTelegramNotification.text}</span>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -388,7 +387,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Coins className="w-4 h-4" />
-          <span>Tournaments &amp; Entry Fees</span>
+          <span>Tournaments</span>
           <span className="rounded-full bg-slate-950/40 px-1.5 py-0.2 text-[10px] font-bold">
             {tournaments.length}
           </span>
@@ -403,7 +402,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span>Master App Settings (খুঁটিনাটি)</span>
+          <span>Settings</span>
         </button>
 
         <button
@@ -415,7 +414,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <FileCheck className="w-4 h-4" />
-          <span>Verification Queue</span>
+          <span>Verification</span>
           {pendingSubmissions.length > 0 && (
             <span className="rounded-full bg-rose-500 text-white px-1.5 py-0.2 text-[10px] font-bold animate-pulse">
               {pendingSubmissions.length}
@@ -432,7 +431,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Megaphone className="w-4 h-4" />
-          <span>Live Urgent Notices</span>
+          <span>Notices</span>
           <span className="rounded-full bg-slate-950/40 px-1.5 py-0.2 text-[10px] font-bold">
             {announcements.length}
           </span>
@@ -447,7 +446,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Gamepad2 className="w-4 h-4" />
-          <span>Manual Scores &amp; Fixtures</span>
+          <span>Scores</span>
         </button>
 
         <button
@@ -459,7 +458,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Players &amp; Users</span>
+          <span>Players</span>
           <span className="rounded-full bg-slate-950/40 px-1.5 py-0.2 text-[10px] font-bold">
             {allUsers.length}
           </span>
@@ -476,18 +475,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div>
               <h2 className="text-base font-black text-white flex items-center gap-2">
                 <Coins className="w-5 h-5 text-amber-400" />
-                <span>Tournament Customization &amp; Entry Fees</span>
+                <span>Tournaments</span>
               </h2>
-              <p className="text-xs text-slate-400">
-                এডমিন যেকোনো টুর্নামেন্টের এন্ট্রি ফি (৳ BDT), প্রাইজপুল, ফরম্যাট ও সকল নিয়ম পরিবর্তন বা কাস্টমাইজ করতে পারবেন।
-              </p>
             </div>
             <button
               onClick={onOpenCreateTournament}
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-3.5 py-1.5 text-xs font-black text-slate-950 hover:brightness-110 transition"
             >
               <Plus className="w-4 h-4" />
-              <span>+ New Tournament</span>
+              <span>Create Tournament</span>
             </button>
           </div>
 
@@ -676,7 +672,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* SUB-TAB 2: MASTER APP SETTINGS (খুঁটিনাটি ছোট-বড় সকল কিছু) */}
+      {/* SUB-TAB 2: MASTER APP SETTINGS */}
       {/* ========================================================================= */}
       {activeAdminSubTab === 'settings' && (
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-6 space-y-6">
@@ -684,11 +680,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div>
               <h2 className="text-base font-black text-white flex items-center gap-2">
                 <Settings className="w-5 h-5 text-[#00ff87]" />
-                <span>Master App Settings &amp; Configuration (খুঁটিনাটি সকল সেটিংস)</span>
+                <span>App Settings</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                বিকাশ/নগদ পেমেন্ট নম্বর, অ্যাপের টাইটেল, লাইভ ব্রেকিং ব্যানার, টেলিগ্রাম সাপোর্ট ও ম্যাচ রুলস কনফিগার করুন।
-              </p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -698,7 +691,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Reset Defaults</span>
+                <span>Reset</span>
               </button>
             </div>
           </div>
@@ -706,17 +699,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {settingsSavedMessage && (
             <div className="rounded-xl bg-emerald-500/20 border border-emerald-500 p-3 text-xs text-emerald-300 flex items-center gap-2 font-bold animate-fadeIn">
               <CheckCircle2 className="w-4 h-4" />
-              <span>App Settings Successfully Saved! সমস্ত পরিবর্তন সাথে সাথে কার্যকর হয়েছে।</span>
+              <span>Settings saved!</span>
             </div>
           )}
 
           <form onSubmit={handleSaveSettings} className="space-y-6">
             
-            {/* 1. App Identity & Title */}
+            {/* 1. App Identity */}
             <div className="space-y-3 p-4 rounded-xl bg-slate-950/70 border border-slate-800">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#00ff87] flex items-center gap-1.5">
                 <Gamepad2 className="w-4 h-4" />
-                <span>1. App Identity &amp; Title (অ্যাপের নাম ও স্লোগান)</span>
+                <span>App Identity</span>
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -735,7 +728,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    App Tagline / Subtitle
+                    Tagline
                   </label>
                   <input
                     type="text"
@@ -747,41 +740,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
 
-            {/* 2. Payment & Cash-In Numbers (bKash, Nagad, Rocket) */}
+            {/* 2. Payment Numbers */}
             <div className="space-y-3 p-4 rounded-xl bg-slate-950/70 border border-amber-500/40">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
                   <CreditCard className="w-4 h-4 text-amber-400" />
-                  <span>2. Payment Accounts &amp; Cash-In (বিকাশ, নগদ ও রকেট নম্বর)</span>
+                  <span>Payment Numbers</span>
                 </h3>
-                <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                  Visible in Entry Fee checkout
-                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    bKash Number &amp; Type
+                    bKash Number
                   </label>
                   <input
                     type="text"
                     value={settingsForm.bkashNumber}
                     onChange={(e) => setSettingsForm({ ...settingsForm, bkashNumber: e.target.value })}
-                    placeholder="017XXXXXXXX (Personal)"
+                    placeholder="01621833825"
                     className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs font-bold text-white focus:border-[#00ff87] focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Nagad Number &amp; Type
+                    Nagad Number
                   </label>
                   <input
                     type="text"
                     value={settingsForm.nagadNumber}
                     onChange={(e) => setSettingsForm({ ...settingsForm, nagadNumber: e.target.value })}
-                    placeholder="018XXXXXXXX (Personal)"
+                    placeholder="01621833825"
                     className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs font-bold text-white focus:border-[#00ff87] focus:outline-none"
                   />
                 </div>
@@ -802,7 +792,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Payment Instructions Note for Players (পেমেন্ট নির্দেশিকা)
+                  Payment Instructions
                 </label>
                 <textarea
                   rows={2}
@@ -813,12 +803,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
 
-            {/* 3. Urgent Live Ticker & Marquee Banner */}
+            {/* 3. Live Urgent Marquee Ticker */}
             <div className="space-y-3 p-4 rounded-xl bg-slate-950/70 border border-rose-500/40">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-wider text-rose-300 flex items-center gap-1.5">
                   <Radio className="w-4 h-4 text-rose-400" />
-                  <span>3. Live Urgent Marquee Ticker (জরুরি লাইভ স্ক্রোলিং ব্যানার)</span>
+                  <span>Live Ticker</span>
                 </h3>
                 <label className="flex items-center gap-2 cursor-pointer text-xs text-rose-300">
                   <input
@@ -827,35 +817,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     onChange={(e) => setSettingsForm({ ...settingsForm, isUrgentTickerActive: e.target.checked })}
                     className="rounded bg-slate-900 border-rose-500 text-rose-500"
                   />
-                  <span className="font-bold">Active in App</span>
+                  <span className="font-bold">Active</span>
                 </label>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Ticker Announcement Message
+                  Ticker Message
                 </label>
                 <input
                   type="text"
                   value={settingsForm.urgentTickerText}
                   onChange={(e) => setSettingsForm({ ...settingsForm, urgentTickerText: e.target.value })}
-                  placeholder="e.g. 🔥 Season 1 Championship Registration Open! Play & Win eFootball Coins!"
+                  placeholder="🔥 Season 1 Championship Registration Open!"
                   className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs font-semibold text-white focus:border-rose-400 focus:outline-none"
                 />
               </div>
             </div>
 
-            {/* 4. Support & Community Links */}
+            {/* 4. Support Links */}
             <div className="space-y-3 p-4 rounded-xl bg-slate-950/70 border border-sky-500/40">
               <h3 className="text-xs font-black uppercase tracking-wider text-sky-300 flex items-center gap-1.5">
                 <Send className="w-4 h-4 text-sky-400" />
-                <span>4. Telegram &amp; WhatsApp Support Links (যোগাযোগ ও চ্যানেল)</span>
+                <span>Support Links</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Telegram Official Channel URL
+                    Telegram Channel URL
                   </label>
                   <input
                     type="text"
@@ -867,7 +857,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Telegram Discussion Group URL
+                    Telegram Group URL
                   </label>
                   <input
                     type="text"
@@ -879,7 +869,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    WhatsApp Support Number / Link
+                    WhatsApp Number
                   </label>
                   <input
                     type="text"
@@ -891,7 +881,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Support Hotline / Phone
+                    Support Hotline
                   </label>
                   <input
                     type="text"
@@ -903,11 +893,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
 
-            {/* 5. Gameplay & Rules Defaults */}
+            {/* 5. Match Rules Defaults */}
             <div className="space-y-3 p-4 rounded-xl bg-slate-950/70 border border-slate-800">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <Sliders className="w-4 h-4 text-emerald-400" />
-                <span>5. Default Match Rules &amp; Verification Windows</span>
+                <span>Match Rules Defaults</span>
               </h3>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -997,18 +987,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="flex items-center justify-between">
             <h2 className="text-base font-black text-white flex items-center gap-2">
               <FileCheck className="w-5 h-5 text-amber-400" />
-              <span>Screenshot Verification Queue ({pendingSubmissions.length})</span>
+              <span>Verification Queue ({pendingSubmissions.length})</span>
             </h2>
-            <span className="text-xs text-slate-400">
-              Approving updates the leaderboard and triggers Telegram bot broadcast
-            </span>
           </div>
 
           {pendingSubmissions.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-slate-400">
               <CheckCircle2 className="w-10 h-10 text-[#00ff87] mx-auto mb-2 opacity-80" />
-              <p className="text-sm font-bold text-white">Queue is clear!</p>
-              <p className="text-xs text-slate-500 mt-0.5">All submitted eFootball match screenshots have been reviewed.</p>
+              <p className="text-sm font-bold text-white">Queue is clear</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -1032,7 +1018,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </p>
                       </div>
                       <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-amber-300 border border-amber-500/30 animate-pulse">
-                        Action Required
+                        Pending
                       </span>
                     </div>
 
@@ -1079,7 +1065,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                         {res.notes && (
                           <div className="mt-2 text-[11px] text-slate-400 bg-slate-900 p-2 rounded border border-slate-800">
-                            <strong>Player Note:</strong> "{res.notes}"
+                            <strong>Note:</strong> "{res.notes}"
                           </div>
                         )}
                       </div>
@@ -1097,19 +1083,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               />
                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition gap-1.5 text-xs text-white font-bold">
                                 <Eye className="w-4 h-4 text-[#00ff87]" />
-                                <span>Inspect Full Screen</span>
+                                <span>Inspect</span>
                               </div>
                             </div>
-                            <span className="text-[10px] text-slate-400 mt-1.5">
-                              Click screenshot to inspect full in-game score &amp; statistics
-                            </span>
                           </>
                         ) : (
                           <div className="py-6 px-4 text-center">
-                            <p className="text-xs font-semibold text-slate-400">No Screenshot Attached</p>
-                            <span className="text-[10px] text-slate-500 mt-1 block">
-                              (Optional submission)
-                            </span>
+                            <p className="text-xs font-semibold text-slate-400">No Screenshot</p>
                           </div>
                         )}
                       </div>
@@ -1124,7 +1104,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         className="flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition disabled:opacity-50"
                       >
                         <XCircle className="w-4 h-4" />
-                        <span>Reject Score</span>
+                        <span>Reject</span>
                       </button>
 
                       <button
@@ -1135,12 +1115,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         {processingId === fixture.id ? (
                           <>
                             <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-950 border-t-transparent" />
-                            <span>Approving &amp; Broadcasting...</span>
+                            <span>Approving...</span>
                           </>
                         ) : (
                           <>
                             <CheckCircle2 className="w-4 h-4" />
-                            <span>Approve &amp; Update Leaderboard</span>
+                            <span>Approve</span>
                           </>
                         )}
                       </button>
@@ -1163,11 +1143,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div>
               <h2 className="text-base font-black text-white flex items-center gap-2">
                 <Megaphone className="w-5 h-5 text-rose-400" />
-                <span>Live Notices &amp; Urgent Feed Manager</span>
+                <span>Notices</span>
               </h2>
-              <p className="text-xs text-slate-400">
-                উপরের নোটিশ আইকন ও ফিডে প্রদর্শিত সকল জরুরি ঘোষণা ও ব্রেকিং আপডেট নিয়ন্ত্রণ করুন।
-              </p>
             </div>
           </div>
 
@@ -1175,50 +1152,50 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-rose-300 flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
-              <span>Create New Live Announcement</span>
+              <span>New Notice</span>
             </h3>
 
             <form onSubmit={handlePostAnnouncement} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Notice Title / শিরোনাম
+                  Title
                 </label>
                 <input
                   type="text"
                   required
                   value={newNoticeTitle}
                   onChange={(e) => setNewNoticeTitle(e.target.value)}
-                  placeholder="e.g. 🚨 Urgent: Match Round 1 Deadline extended by 2 hours"
+                  placeholder="e.g. Round 1 schedule updated"
                   className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs font-bold text-white focus:border-rose-400 focus:outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Detailed Announcement Message
+                  Message
                 </label>
                 <textarea
                   rows={3}
                   required
                   value={newNoticeMessage}
                   onChange={(e) => setNewNoticeMessage(e.target.value)}
-                  placeholder="Enter the full announcement text, rules notice, or warning for gamers..."
+                  placeholder="Notice message..."
                   className="w-full rounded-xl bg-slate-950 border border-slate-700 p-2.5 text-xs text-white focus:border-rose-400 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">Category / Type</label>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Type</label>
                   <select
                     value={newNoticeType}
                     onChange={(e) => setNewNoticeType(e.target.value as any)}
                     className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white"
                   >
-                    <option value="urgent">🚨 Urgent Alert</option>
-                    <option value="tournament">🏆 Tournament Update</option>
-                    <option value="maintenance">⚙️ Maintenance</option>
-                    <option value="info">ℹ️ General Info</option>
+                    <option value="urgent">Alert</option>
+                    <option value="tournament">Tournament</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="info">General</option>
                   </select>
                 </div>
 
@@ -1229,7 +1206,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     onChange={(e) => setNewNoticePriority(e.target.value as any)}
                     className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white"
                   >
-                    <option value="high">High (Top Pin)</option>
+                    <option value="high">High</option>
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
@@ -1243,7 +1220,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       onChange={(e) => setNewNoticeBroadcastTele(e.target.checked)}
                       className="rounded bg-slate-900 border-sky-500 text-sky-500"
                     />
-                    <span>Post to Telegram Channel</span>
+                    <span>Post to Telegram</span>
                   </label>
                 </div>
               </div>
@@ -1255,7 +1232,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 px-6 py-2 text-xs font-black uppercase text-white shadow-md hover:brightness-110 disabled:opacity-50"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>{isPostingNotice ? 'Publishing...' : 'Publish Announcement'}</span>
+                  <span>{isPostingNotice ? 'Publishing...' : 'Publish'}</span>
                 </button>
               </div>
             </form>
@@ -1264,7 +1241,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* Notice List */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Published Notices ({announcements.length})
+              Notices ({announcements.length})
             </h3>
 
             {announcements.map((ann) => (
@@ -1283,7 +1260,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                   <p className="text-xs text-slate-300">{ann.message}</p>
                   <span className="text-[10px] text-slate-500 block">
-                    Author: {ann.authorName} • {new Date(ann.createdAt).toLocaleString()}
+                    {ann.authorName} • {new Date(ann.createdAt).toLocaleString()}
                   </span>
                 </div>
 
@@ -1326,11 +1303,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Shuffle className="w-5 h-5 text-sky-400" />
-                  <span>Fixture Generator &amp; Match Schedule</span>
+                  <span>Fixture Generator</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Generate official match brackets for any tournament
-                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1352,7 +1326,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="flex items-center gap-1.5 rounded-xl bg-sky-500 px-4 py-2 text-xs font-black text-slate-950 hover:bg-sky-400 active:scale-95 transition"
                 >
                   <Shuffle className="w-3.5 h-3.5" />
-                  <span>Generate Pairings</span>
+                  <span>Generate</span>
                 </button>
               </div>
             </div>

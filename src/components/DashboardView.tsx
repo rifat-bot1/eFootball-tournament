@@ -286,18 +286,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="flex h-2 w-2 rounded-full bg-[#00ff87] animate-ping" />
             <span className="text-[11px] sm:text-xs text-slate-300 font-medium">Ready for eFootball matchday!</span>
           </div>
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => onNavigateToSubmit()}
-              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-3.5 py-2 text-xs font-black text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition touch-manipulation"
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-3.5 py-1.5 text-xs font-black text-slate-950 shadow-md shadow-[#00ff87]/20 hover:brightness-110 active:scale-95 transition"
             >
               <Upload className="w-3.5 h-3.5" />
-              <span>Submit Match Screenshot</span>
+              <span>Submit</span>
             </button>
             {onNavigateToRules && (
               <button
                 onClick={onNavigateToRules}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition touch-manipulation"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition"
               >
                 <BookOpen className="w-3.5 h-3.5 text-[#00ff87]" />
                 <span>Rules</span>
@@ -306,7 +306,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {onNavigateToHistory && (
               <button
                 onClick={onNavigateToHistory}
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition touch-manipulation"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700 hover:text-white transition"
               >
                 <History className="w-3.5 h-3.5 text-amber-400" />
                 <span>History</span>
@@ -315,67 +315,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {isUserAdmin(currentUser) && (
               <button
                 onClick={onOpenCreateModal}
-                className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition touch-manipulation"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition"
               >
                 <Zap className="w-3.5 h-3.5" />
-                <span>Create Tournament</span>
+                <span>Create</span>
               </button>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Official Telegram Channel & Tournament Rules Quick Banners */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
-        <a
-          href="https://t.me/eFootballTournamentBD"
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-between p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-950/40 via-slate-900 to-sky-950/30 hover:border-sky-400 hover:bg-sky-900/30 transition group shadow-md touch-manipulation active:scale-[0.99]"
-        >
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg sm:rounded-xl bg-sky-500/20 text-sky-400 border border-sky-500/30 group-hover:scale-105 transition-transform shrink-0">
-              <Send className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-black text-white truncate">Official Telegram Channel</span>
-                <span className="rounded bg-sky-500/20 px-1.5 py-0.2 text-[9px] font-bold text-sky-300 shrink-0">
-                  @eFootballTournamentBD
-                </span>
-              </div>
-              <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
-                Live match fixtures, score announcements &amp; highlights
-              </p>
-            </div>
-          </div>
-          <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform shrink-0 ml-2" />
-        </a>
-
-        {onNavigateToRules && (
-          <div
-            onClick={onNavigateToRules}
-            className="cursor-pointer flex items-center justify-between p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-[#00ff87]/30 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 hover:border-[#00ff87]/60 hover:bg-emerald-950/30 transition group shadow-md touch-manipulation active:scale-[0.99]"
-          >
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg sm:rounded-xl bg-[#00ff87]/15 text-[#00ff87] border border-[#00ff87]/30 group-hover:scale-105 transition-transform shrink-0">
-                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#00ff87]" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs font-black text-white truncate">Tournament &amp; Fair Play Rules</span>
-                  <span className="rounded bg-[#00ff87]/20 px-1.5 py-0.2 text-[9px] font-bold text-[#00ff87] shrink-0">
-                    Guidelines
-                  </span>
-                </div>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 truncate">
-                  Screenshot requirements, match lobby rules &amp; scoring system
-                </p>
-              </div>
-            </div>
-            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00ff87] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform shrink-0 ml-2" />
-          </div>
-        )}
       </div>
 
       {/* Section: Active & Upcoming Tournaments */}
@@ -478,10 +425,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             setEditingTour(tour);
                           }}
                           className="rounded-lg bg-amber-500/95 backdrop-blur-md px-2.5 py-1 text-[11px] font-black text-slate-950 hover:bg-amber-400 border border-amber-300 flex items-center gap-1 shadow-lg transition active:scale-95 touch-manipulation"
-                          title="Customize entry fee and tournament details"
+                          title="Edit entry fee and settings"
                         >
                           <Coins className="w-3.5 h-3.5" />
-                          <span>Customize Fee</span>
+                          <span>Fee</span>
                         </button>
 
                         <button
@@ -587,20 +534,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             })}
           </div>
         )}
-      </div>
-
-      {/* Rules Notice for Players */}
-      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/40 p-4 sm:p-5 text-slate-300">
-        <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-2">
-          <ShieldAlert className="w-4 h-4 text-amber-400" />
-          <span>eFootball Mobile Tournament Fair Play & Match Guidelines</span>
-        </h4>
-        <ul className="text-xs space-y-1.5 text-slate-400 list-disc pl-5">
-          <li>Add your opponent using their <strong>eFootball In-Game ID</strong> in the Friend Match lobby.</li>
-          <li>Default settings: <strong>10 Minutes, Extra Time OFF, Penalties ON, Condition: Excellent</strong> unless specified.</li>
-          <li>After the final whistle, take a <strong>full-screen screenshot</strong> showing both team names, scores, and match statistics.</li>
-          <li>Upload the screenshot under <strong>Submit Result</strong>. Once verified, the points table and Telegram notification are updated instantly!</li>
-        </ul>
       </div>
 
       {/* Join Tournament Details & Telegram Broadcast Modal */}

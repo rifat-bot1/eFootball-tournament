@@ -125,46 +125,15 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const navItems = [
-    { 
-      id: 'dashboard', 
-      label: 'Home', 
-      description: 'Tournaments, Live News & Announcements',
-      icon: Flame 
-    },
-    { 
-      id: 'fixtures', 
-      label: 'Fixtures', 
-      description: 'Match Schedules, Timers & Pairings',
-      icon: Calendar 
-    },
-    { 
-      id: 'submit', 
-      label: 'Submit Result', 
-      description: 'Upload Final Match Screenshot & Scores',
-      icon: Upload 
-    },
-    { 
-      id: 'leaderboard', 
-      label: 'Leaderboard', 
-      description: 'Live Points Table, GD & Form Streak',
-      icon: Table 
-    },
-    { 
-      id: 'history', 
-      label: 'Tournament History', 
-      description: 'Past Champions Podium & Completed Events',
-      icon: History 
-    },
-    { 
-      id: 'rules', 
-      label: 'Tournament Rules', 
-      description: '10-Min Fair Play & Match Settings',
-      icon: BookOpen 
-    },
+    { id: 'dashboard', label: 'Home', icon: Flame },
+    { id: 'fixtures', label: 'Fixtures', icon: Calendar },
+    { id: 'submit', label: 'Submit Result', icon: Upload },
+    { id: 'leaderboard', label: 'Leaderboard', icon: Table },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'rules', label: 'Rules', icon: BookOpen },
     ...(isUserAdmin(currentUser) ? [{ 
       id: 'admin', 
-      label: 'Admin Desk', 
-      description: 'Verify Screenshots, Fixtures & Telegram Broadcasts',
+      label: 'Admin Panel', 
       icon: ShieldCheck,
       badge: pendingReviewsCount > 0 ? pendingReviewsCount : undefined 
     }] : []),
@@ -378,102 +347,60 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Primary Navigation Items */}
-                <div className="py-2 space-y-1">
-                  <div className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
-                    Main Navigation
-                  </div>
-
-                  {/* Tournament Live Notice & Urgent Feed Highlighted Action */}
+                <div className="py-1.5 space-y-0.5">
+                  {/* Tournament Live Notice */}
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
                       setHasUnreadNotice(false);
                       onOpenNoticeFeed();
                     }}
-                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left bg-gradient-to-r from-rose-500/20 via-amber-500/10 to-transparent border border-rose-500/40 hover:border-rose-400 hover:bg-rose-500/25 text-rose-200 transition-all shadow-sm"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400">
-                        <Megaphone className="w-4 h-4 animate-pulse" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold block truncate text-white">Live Notice &amp; Urgent Feed</span>
-                          <span className="text-[9px] font-black px-1 rounded bg-rose-500/30 text-rose-300 uppercase">LIVE</span>
-                        </div>
-                        <span className="text-[10px] text-slate-400 truncate block">
-                          Urgent announcements &amp; schedules
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2.5">
+                      <Megaphone className="w-4 h-4 text-rose-400" />
+                      <span className="text-xs font-bold text-white">Notice</span>
                     </div>
                     {activeNoticeCount > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white">
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white">
                         {activeNoticeCount}
                       </span>
                     )}
                   </button>
 
-                  {/* 1. Balance Option (For all users to view balance, deposit, withdraw) */}
+                  {/* Balance */}
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
                       onOpenWallet();
                     }}
-                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left bg-gradient-to-r from-emerald-500/20 via-sky-500/10 to-transparent border border-emerald-500/40 hover:border-[#00ff87] hover:bg-emerald-500/25 text-emerald-200 transition-all shadow-sm"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-[#00ff87]">
-                        <Wallet className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold block truncate text-white">Balance (ব্যালেন্স ও ওয়ালেট)</span>
-                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-500/30 text-[#00ff87] uppercase font-mono">
-                            ৳{currentUser.balance || 0}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-400 truncate block">
-                          Deposit (bKash/Nagad), Withdraw &amp; History
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2.5">
+                      <Wallet className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-bold text-white">Balance</span>
                     </div>
-                    <span className="text-xs font-black text-[#00ff87] font-mono shrink-0">
+                    <span className="text-xs font-mono font-bold text-[#00ff87]">
                       ৳{currentUser.balance || 0}
                     </span>
                   </button>
 
-                  {/* 2. Users Option (STRICTLY ADMIN ONLY: Never visible to normal users) */}
+                  {/* Users (Admin Only) */}
                   {isUserAdmin(currentUser) && (
                     <button
                       onClick={() => {
                         setIsMenuOpen(false);
                         onOpenAdminUsers();
                       }}
-                      className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left bg-gradient-to-r from-amber-500/20 via-slate-800 to-transparent border border-amber-500/40 hover:border-amber-400 hover:bg-amber-500/25 text-amber-200 transition-all shadow-sm"
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
-                          <Users className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold block truncate text-white">Users (ইউজার ও ব্যালেন্স কন্ট্রোল)</span>
-                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 uppercase">
-                              ADMIN
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 truncate block">
-                            সকল লগইন ইউজার লিস্ট, ব্যালেন্স এডিট ও Trx ভেরিফিকেশন
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-2.5">
+                        <Users className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-bold text-white">Users</span>
                       </div>
-                      {pendingTransactionsCount > 0 ? (
-                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950 animate-pulse shrink-0">
+                      {pendingTransactionsCount > 0 && (
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-slate-950">
                           {pendingTransactionsCount}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-amber-400 font-bold shrink-0">
-                          Manage &rarr;
                         </span>
                       )}
                     </button>
@@ -487,28 +414,19 @@ export const Header: React.FC<HeaderProps> = ({
                       <button
                         key={item.id}
                         onClick={() => handleNavClick(item.id)}
-                        className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition ${
                           isActive
-                            ? 'bg-gradient-to-r from-[#00ff87]/20 to-[#00e5ff]/10 text-[#00ff87] border border-[#00ff87]/40 shadow-sm font-bold'
-                            : 'text-slate-300 hover:bg-slate-900 hover:text-white border border-transparent'
+                            ? 'bg-[#00ff87]/15 text-[#00ff87] font-bold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`p-1.5 rounded-lg ${
-                            isActive ? 'bg-[#00ff87]/20 text-[#00ff87]' : 'bg-slate-800/80 text-slate-400'
-                          }`}>
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-xs font-bold block truncate">{item.label}</span>
-                            <span className="text-[10px] text-slate-400 truncate block">
-                              {item.description}
-                            </span>
-                          </div>
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`w-4 h-4 ${isActive ? 'text-[#00ff87]' : 'text-slate-400'}`} />
+                          <span className="text-xs font-bold">{item.label}</span>
                         </div>
 
                         {item.badge !== undefined && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950 animate-pulse">
+                          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-slate-950">
                             {item.badge}
                           </span>
                         )}
@@ -518,7 +436,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Secondary Actions: Telegram + Switch Account + Logout */}
-                <div className="pt-2 space-y-1">
+                <div className="pt-2 space-y-0.5">
                   <a
                     href={appSettings.telegramChannelUrl || "https://t.me/eFootballTournamentBD"}
                     target="_blank"
@@ -528,7 +446,7 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <div className="flex items-center gap-2.5">
                       <Send className="w-4 h-4 text-sky-400" />
-                      <span>Join Telegram Channel</span>
+                      <span>Telegram</span>
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 opacity-60" />
                   </a>
@@ -540,8 +458,8 @@ export const Header: React.FC<HeaderProps> = ({
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition"
                   >
-                    <Settings className="w-4 h-4 text-[#00ff87]" />
-                    <span>Edit Profile Details</span>
+                    <Settings className="w-4 h-4 text-slate-400" />
+                    <span>Profile</span>
                   </button>
 
                   <button
