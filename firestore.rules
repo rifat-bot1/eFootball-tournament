@@ -49,17 +49,14 @@ service cloud.firestore {
     function isValidTournament(data) {
       return data.id is string && data.id.size() <= 128 &&
              data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
-             data.format in ['single_elimination', 'round_robin', 'group_knockout'] &&
-             data.status in ['upcoming', 'ongoing', 'completed'] &&
-             data.createdBy is string && data.createdBy.size() <= 128;
+             data.format in ['knockout', 'league', 'single_elimination', 'round_robin', 'group_knockout'] &&
+             data.status in ['upcoming', 'ongoing', 'completed'];
     }
 
     // Validation for Match Fixture
     function isValidMatchFixture(data) {
       return data.id is string && data.id.size() <= 128 &&
              data.tournamentId is string && data.tournamentId.size() <= 128 &&
-             data.player1Id is string && data.player1Id.size() <= 128 &&
-             data.player2Id is string && data.player2Id.size() <= 128 &&
              data.status in ['scheduled', 'submitted', 'approved', 'rejected'];
     }
 
@@ -80,74 +77,40 @@ service cloud.firestore {
     // Admins Collection
     match /admins/{adminId} {
       allow get: if isSignedIn() && isValidId(adminId);
-      allow list: if isAdmin();
-      allow write: if isAdmin();
+      allow list, write: if isAdmin();
     }
 
-    // Users Collection
+    // Users Collection (Synced across devices)
     match /users/{userId} {
-      allow get: if isSignedIn() && isValidId(userId);
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isValidId(userId) &&
-                       isValidUserProfile(incoming()) &&
-                       (incoming().role == 'player' || isAdmin());
-      allow update: if isSignedIn() && isValidId(userId) &&
-                       isValidUserProfile(incoming()) &&
-                       (
-                         isAdmin() ||
-                         (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'efootballId', 'favoriteClub', 'avatarUrl', 'rating', 'division']))
-                       );
-      allow delete: if isAdmin();
+      allow get, list: if true;
+      allow create, update: if isValidId(userId) && isValidUserProfile(incoming());
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
     }
 
-    // Tournaments Collection
+    // Tournaments Collection (Public real-time sync)
     match /tournaments/{tournamentId} {
-      allow get: if isValidId(tournamentId);
-      allow list: if true;
-      allow create: if isSignedIn() && isValidId(tournamentId) &&
-                       isValidTournament(incoming()) &&
-                       isAdmin();
-      allow update: if isSignedIn() && isValidId(tournamentId) &&
-                       isValidTournament(incoming()) &&
-                       (
-                         isAdmin() ||
-                         incoming().diff(existing()).affectedKeys().hasOnly(['participants'])
-                       );
-      allow delete: if isAdmin();
+      allow get, list: if true;
+      allow create, update: if isValidId(tournamentId) && isValidTournament(incoming());
+      allow delete: if isValidId(tournamentId);
     }
 
-    // Fixtures Collection
+    // Fixtures Collection (Public real-time match schedules and verified scores)
     match /fixtures/{fixtureId} {
-      allow get: if isValidId(fixtureId);
-      allow list: if true;
-      allow create: if isSignedIn() && isValidId(fixtureId) &&
-                       isValidMatchFixture(incoming()) &&
-                       isAdmin();
-      allow update: if isSignedIn() && isValidId(fixtureId) &&
-                       isValidMatchFixture(incoming()) &&
-                       (
-                         isAdmin() ||
-                         // Player submitting their score
-                         (
-                           (request.auth.uid == existing().player1Id || request.auth.uid == existing().player2Id) &&
-                           existing().status in ['scheduled', 'rejected'] &&
-                           incoming().status == 'submitted' &&
-                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'result', 'submittedAt', 'notes'])
-                         )
-                       );
-      allow delete: if isAdmin();
+      allow get, list: if true;
+      allow create, update: if isValidId(fixtureId) && isValidMatchFixture(incoming());
+      allow delete: if isValidId(fixtureId);
     }
 
-    // Announcements Collection (Real-time tournament announcements & urgent news)
+    // Announcements Collection (Real-time urgent notice feed)
     match /announcements/{announcementId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && isValidId(announcementId) &&
-                       isValidAnnouncement(incoming()) &&
-                       isAdmin();
-      allow update: if isSignedIn() && isValidId(announcementId) &&
-                       isValidAnnouncement(incoming()) &&
-                       isAdmin();
-      allow delete: if isAdmin();
+      allow create, update: if isValidId(announcementId) && isValidAnnouncement(incoming());
+      allow delete: if isValidId(announcementId);
+    }
+
+    // App Settings Collection
+    match /settings/{settingId} {
+      allow get, list, read, write: if true;
     }
   }
 }

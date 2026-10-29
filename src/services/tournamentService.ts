@@ -19,10 +19,14 @@ import {
   HISTORICAL_COMPLETED_FIXTURES
 } from './mockData';
 import { sendTelegramNotification } from './telegramService';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { 
+  db,
   uploadMatchScreenshot, 
   syncTournamentToFirestore, 
+  deleteTournamentFromFirestore,
   syncFixtureToFirestore, 
+  deleteFixtureFromFirestore,
   syncUserToFirestore 
 } from './firebase';
 
@@ -431,6 +435,148 @@ export function saveFixtures(fixtures: MatchFixture[]): void {
 }
 
 /**
+ * Real-time subscription to Tournaments across all devices via Firestore
+ */
+export function subscribeToTournaments(callback: (tournaments: Tournament[]) => void): () => void {
+  // 1. Immediately emit local/cached tournaments for instant response
+  const initial = getTournaments();
+  callback(initial);
+
+  // Auto-sync any existing local tournaments (like newly created tournaments) to Firestore
+  if (initial.length > 0) {
+    initial.forEach(t => {
+      syncTournamentToFirestore(t).catch(() => {});
+    });
+  }
+
+  // 2. Real-time Firestore snapshot listener
+  try {
+    const colRef = collection(db, 'tournaments');
+    const unsubscribe = onSnapshot(
+      colRef,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const cloudList: Tournament[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as Tournament;
+            if (data && data.id && !['tour_01', 'tour_02', 'tour_03'].includes(data.id)) {
+              cloudList.push({
+                ...data,
+                bannerUrl: (!data.bannerUrl || data.bannerUrl.includes('unsplash.com')) ? './images/banner-stadium.svg' : data.bannerUrl
+              });
+            }
+          });
+          // Sort newest tournaments first
+          cloudList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+          
+          saveTournaments(cloudList);
+          callback(cloudList);
+        } else {
+          // If Firestore is empty but we have local tournaments, seed them to Firestore
+          const local = getTournaments();
+          if (local.length > 0) {
+            local.forEach(t => syncTournamentToFirestore(t).catch(() => {}));
+          }
+          callback(local);
+        }
+      },
+      (error) => {
+        console.warn('Tournaments snapshot listener:', error);
+        callback(getTournaments());
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.warn('Failed subscribing to tournaments:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Real-time subscription to Fixtures across all devices via Firestore
+ */
+export function subscribeToFixtures(callback: (fixtures: MatchFixture[]) => void): () => void {
+  const initial = getFixtures();
+  callback(initial);
+
+  if (initial.length > 0) {
+    initial.forEach(f => syncFixtureToFirestore(f).catch(() => {}));
+  }
+
+  try {
+    const colRef = collection(db, 'fixtures');
+    const unsubscribe = onSnapshot(
+      colRef,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const cloudList: MatchFixture[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as MatchFixture;
+            if (data && data.id && !data.id.startsWith('fix_10') && !data.id.startsWith('fix_20')) {
+              cloudList.push(data);
+            }
+          });
+          saveFixtures(cloudList);
+          callback(cloudList);
+        } else {
+          const local = getFixtures();
+          if (local.length > 0) {
+            local.forEach(f => syncFixtureToFirestore(f).catch(() => {}));
+          }
+          callback(local);
+        }
+      },
+      (error) => {
+        console.warn('Fixtures snapshot listener:', error);
+        callback(getFixtures());
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    console.warn('Failed subscribing to fixtures:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Real-time subscription to Users across all devices via Firestore
+ */
+export function subscribeToUsers(callback: (users: UserProfile[]) => void): () => void {
+  const initial = getUsers();
+  callback(initial);
+
+  try {
+    const colRef = collection(db, 'users');
+    const unsubscribe = onSnapshot(
+      colRef,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const cloudList: UserProfile[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as UserProfile;
+            if (data && data.id) {
+              cloudList.push(data);
+            }
+          });
+          // Ensure admin is in the list
+          if (!cloudList.some(u => u.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase())) {
+            cloudList.push(OFFICIAL_ADMIN_PROFILE);
+          }
+          saveUsers(cloudList);
+          callback(cloudList);
+        }
+      },
+      (error) => {
+        console.warn('Users snapshot listener:', error);
+      }
+    );
+    return unsubscribe;
+  } catch (err) {
+    return () => {};
+  }
+}
+
+/**
  * Register a new user with eFootball In-Game ID
  */
 export function registerUser(data: {
@@ -643,6 +789,7 @@ export function deleteTournament(tournamentId: string): boolean {
   const tournaments = getTournaments();
   const filtered = tournaments.filter(t => t.id !== tournamentId);
   saveTournaments(filtered);
+  deleteTournamentFromFirestore(tournamentId).catch(() => {});
 
   const fixtures = getFixtures();
   const remainingFixtures = fixtures.filter(f => f.tournamentId !== tournamentId);

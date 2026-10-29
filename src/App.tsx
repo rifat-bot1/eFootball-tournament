@@ -30,7 +30,10 @@ import {
   adminAddPlayerToTournament,
   adminOverrideMatchResult,
   adminUpdateUser,
-  adminDeleteUser
+  adminDeleteUser,
+  subscribeToTournaments,
+  subscribeToFixtures,
+  subscribeToUsers
 } from './services/tournamentService';
 import { onFirebaseAuthStateChanged, logOut } from './services/firebase';
 import { Tournament, MatchFixture, UserProfile, LeaderboardEntry, AppSettings } from './types/tournament';
@@ -67,6 +70,29 @@ export default function App() {
   useEffect(() => {
     const unsub = subscribeToAppSettings(setAppSettings);
     return () => unsub();
+  }, []);
+
+  // Real-time Firestore sync subscriptions for Tournaments, Fixtures, and Users across all devices
+  useEffect(() => {
+    const unsubTournaments = subscribeToTournaments((updatedTournaments) => {
+      setTournaments(updatedTournaments);
+      setSelectedTournamentId((prev) => {
+        if (!prev && updatedTournaments.length > 0) return updatedTournaments[0].id;
+        if (prev && !updatedTournaments.some(t => t.id === prev) && updatedTournaments.length > 0) {
+          return updatedTournaments[0].id;
+        }
+        return prev;
+      });
+    });
+
+    const unsubFixtures = subscribeToFixtures(setFixtures);
+    const unsubUsers = subscribeToUsers(setAllUsers);
+
+    return () => {
+      unsubTournaments();
+      unsubFixtures();
+      unsubUsers();
+    };
   }, []);
 
   // Modals

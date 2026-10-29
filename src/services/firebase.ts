@@ -161,30 +161,57 @@ export async function uploadMatchScreenshot(
  * Sync tournament to cloud database
  */
 export async function syncTournamentToFirestore(tournament: Tournament): Promise<void> {
-  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'tournaments', tournament.id), tournament, { merge: true });
-  } catch {}
+  } catch (err) {
+    console.warn('Failed to sync tournament to Firestore:', err);
+  }
+}
+
+/**
+ * Delete tournament from cloud database
+ */
+export async function deleteTournamentFromFirestore(tournamentId: string): Promise<void> {
+  try {
+    const { deleteDoc } = await import('firebase/firestore');
+    await deleteDoc(doc(db, 'tournaments', tournamentId));
+  } catch (err) {
+    console.warn('Failed to delete tournament from Firestore:', err);
+  }
 }
 
 /**
  * Sync fixture to cloud database
  */
 export async function syncFixtureToFirestore(fixture: MatchFixture): Promise<void> {
-  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'fixtures', fixture.id), fixture, { merge: true });
-  } catch {}
+  } catch (err) {
+    console.warn('Failed to sync fixture to Firestore:', err);
+  }
+}
+
+/**
+ * Delete fixture from cloud database
+ */
+export async function deleteFixtureFromFirestore(fixtureId: string): Promise<void> {
+  try {
+    const { deleteDoc } = await import('firebase/firestore');
+    await deleteDoc(doc(db, 'fixtures', fixtureId));
+  } catch (err) {
+    console.warn('Failed to delete fixture from Firestore:', err);
+  }
 }
 
 /**
  * Sync user profile
  */
 export async function syncUserToFirestore(user: UserProfile): Promise<void> {
-  if (!auth.currentUser) return;
   try {
     await setDoc(doc(db, 'users', user.id), user, { merge: true });
-  } catch {}
+  } catch (err) {
+    console.warn('Failed to sync user to Firestore:', err);
+  }
 }
 
 export const firebaseServices = {
