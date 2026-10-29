@@ -112,5 +112,12 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow get, list, read, write: if true;
     }
+
+    // Wallet Transactions Collection (Deposits, withdrawals, balance adjustments)
+    match /wallet_transactions/{txId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(txId);
+      allow delete: if isValidId(txId);
+    }
   }
 }

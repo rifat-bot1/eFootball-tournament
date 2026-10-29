@@ -36,12 +36,14 @@ import { UpcomingMatchCountdown } from './UpcomingMatchCountdown';
 import { handleAvatarError, handleBannerError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR, DEFAULT_BANNER } from '../utils/imageUtils';
 import { isUserAdmin } from '../services/mockData';
 import { getFixtures } from '../services/tournamentService';
+import { deductTournamentEntryFee } from '../services/walletService';
 
 interface DashboardViewProps {
   tournaments: Tournament[];
   currentUser: UserProfile;
   leaderboard: LeaderboardEntry[];
   fixtures?: MatchFixture[];
+  onOpenWallet?: () => void;
   onJoinTournament: (
     tournamentId: string,
     playerData?: {
@@ -72,6 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   currentUser,
   leaderboard,
   fixtures,
+  onOpenWallet,
   onJoinTournament,
   onLeaveTournament,
   onUpdateTournamentBanner,
@@ -114,6 +117,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       division: string;
     }
   ) => {
+    // If tournament has entry fee, deduct from wallet
+    const tour = tournaments.find(t => t.id === tournamentId) || joiningTournament;
+    const fee = tour?.entryFee || 0;
+    if (fee > 0 && tour) {
+      const deduction = await deductTournamentEntryFee(currentUser, tour);
+      if (!deduction.success) {
+        alert(deduction.error || 'Failed to deduct entry fee');
+        return;
+      }
+    }
+
     const res = await onJoinTournament(tournamentId, playerData);
     confetti({
       particleCount: 80,
@@ -226,6 +240,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span className="text-[10px] sm:text-xs text-slate-400">
                   • Rating: <strong className="text-white">{currentUser.rating}</strong>
                 </span>
+
+                {onOpenWallet && (
+                  <button
+                    onClick={onOpenWallet}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/60 px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-emerald-300 hover:bg-emerald-900/60 transition shadow-sm ml-1"
+                    title="View wallet & deposit/withdraw balance"
+                  >
+                    <Wallet className="w-3 h-3 text-emerald-400" />
+                    <span>৳{currentUser.balance ?? 0}</span>
+                    <span className="text-[9px] text-emerald-200 font-semibold bg-emerald-500/20 px-1 py-0.2 rounded">+ Add</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -566,6 +592,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         tournament={joiningTournament}
         currentUser={currentUser}
         onConfirmJoin={handleConfirmJoin}
+        onOpenDeposit={onOpenWallet}
       />
 
       {/* Edit Tournament Banner Modal (Admin Only) */}

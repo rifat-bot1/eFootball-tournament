@@ -22,7 +22,10 @@ import {
   Settings,
   Megaphone,
   Radio,
-  Bell
+  Bell,
+  Wallet,
+  Coins,
+  Users
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -39,7 +42,10 @@ interface HeaderProps {
   onOpenAuth: () => void;
   onOpenProfile: () => void;
   onOpenNoticeFeed: () => void;
+  onOpenWallet: () => void;
+  onOpenAdminUsers: () => void;
   pendingReviewsCount: number;
+  pendingTransactionsCount?: number;
   onLogout?: () => void;
 }
 
@@ -50,7 +56,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onOpenProfile,
   onOpenNoticeFeed,
+  onOpenWallet,
+  onOpenAdminUsers,
   pendingReviewsCount,
+  pendingTransactionsCount = 0,
   onLogout
 }) => {
   const [copiedId, setCopiedId] = useState(false);
@@ -248,7 +257,19 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {/* 3. Profile Icon / Capsule: Clicking opens UserProfileModal */}
+          {/* 3. Wallet Balance Pill Button */}
+          <button
+            onClick={onOpenWallet}
+            className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-bold text-[#00ff87] hover:bg-emerald-500/20 hover:border-[#00ff87] transition-all shadow-sm active:scale-95 group shrink-0"
+            title="My Wallet & Balance (টাকা জমা ও উত্তোলন)"
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
+            <span className="font-mono font-black text-white group-hover:text-[#00ff87]">
+              ৳{currentUser.balance || 0}
+            </span>
+          </button>
+
+          {/* 4. Profile Icon / Capsule: Clicking opens UserProfileModal */}
           <div 
             onClick={onOpenProfile}
             className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/90 p-1.5 pr-2.5 hover:border-[#00ff87]/60 hover:bg-slate-850 transition-all group shadow-sm"
@@ -391,6 +412,72 @@ export const Header: React.FC<HeaderProps> = ({
                       </span>
                     )}
                   </button>
+
+                  {/* 1. Balance Option (For all users to view balance, deposit, withdraw) */}
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onOpenWallet();
+                    }}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left bg-gradient-to-r from-emerald-500/20 via-sky-500/10 to-transparent border border-emerald-500/40 hover:border-[#00ff87] hover:bg-emerald-500/25 text-emerald-200 transition-all shadow-sm"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-[#00ff87]">
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold block truncate text-white">Balance (ব্যালেন্স ও ওয়ালেট)</span>
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-500/30 text-[#00ff87] uppercase font-mono">
+                            ৳{currentUser.balance || 0}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 truncate block">
+                          Deposit (bKash/Nagad), Withdraw &amp; History
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-[#00ff87] font-mono shrink-0">
+                      ৳{currentUser.balance || 0}
+                    </span>
+                  </button>
+
+                  {/* 2. Users Option (STRICTLY ADMIN ONLY: Never visible to normal users) */}
+                  {isUserAdmin(currentUser) && (
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        onOpenAdminUsers();
+                      }}
+                      className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left bg-gradient-to-r from-amber-500/20 via-slate-800 to-transparent border border-amber-500/40 hover:border-amber-400 hover:bg-amber-500/25 text-amber-200 transition-all shadow-sm"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold block truncate text-white">Users (ইউজার ও ব্যালেন্স কন্ট্রোল)</span>
+                            <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 uppercase">
+                              ADMIN
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 truncate block">
+                            সকল লগইন ইউজার লিস্ট, ব্যালেন্স এডিট ও Trx ভেরিফিকেশন
+                          </span>
+                        </div>
+                      </div>
+                      {pendingTransactionsCount > 0 ? (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-slate-950 animate-pulse shrink-0">
+                          {pendingTransactionsCount}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-amber-400 font-bold shrink-0">
+                          Manage &rarr;
+                        </span>
+                      )}
+                    </button>
+                  )}
 
                   {navItems.map((item) => {
                     const Icon = item.icon;

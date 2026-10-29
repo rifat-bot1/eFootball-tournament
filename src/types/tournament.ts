@@ -13,6 +13,7 @@ export interface UserProfile {
   bio?: string;
   password?: string;
   lastEfootballIdChangedAt?: string; // ISO date of last eFootball ID change for 10-day cooldown
+  balance?: number; // User wallet balance in BDT (৳)
   createdAt: string;
 }
 
@@ -160,3 +161,29 @@ export interface AppSettings {
   allowPlayerRegistration: boolean;
   maintenanceMode: boolean;
 }
+
+export type PaymentMethod = 'bkash' | 'nagad';
+export type TransactionType = 'deposit' | 'withdraw' | 'entry_fee' | 'prize_reward' | 'admin_adjustment';
+export type TransactionStatus = 'pending' | 'approved' | 'rejected';
+
+export interface WalletTransaction {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userEfootballId: string;
+  type: TransactionType;
+  amount: number;
+  method?: PaymentMethod;
+  senderNumber?: string; // e.g. 017...
+  receiverNumber?: string; // e.g. 018...
+  transactionId?: string; // TrxID from bKash/Nagad
+  status: TransactionStatus;
+  note?: string;
+  tournamentId?: string;
+  tournamentTitle?: string;
+  createdAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+

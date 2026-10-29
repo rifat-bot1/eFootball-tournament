@@ -35,6 +35,7 @@ interface JoinTournamentModalProps {
       division: string;
     }
   ) => Promise<void>;
+  onOpenDeposit?: () => void;
 }
 
 export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
@@ -42,7 +43,8 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
   onClose,
   tournament,
   currentUser,
-  onConfirmJoin
+  onConfirmJoin,
+  onOpenDeposit
 }) => {
   const [playerName, setPlayerName] = useState(currentUser.name || '');
   const [efootballId, setEfootballId] = useState(currentUser.efootballId || '');
@@ -52,10 +54,12 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
   );
   const [favoriteClub, setFavoriteClub] = useState(currentUser.favoriteClub || 'FC Barcelona');
   const [division, setDivision] = useState(currentUser.division || 'Division 1');
-  const [trxId, setTrxId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const appSettings = getAppSettings();
+
+  const userBalance = currentUser.balance || 0;
+  const entryFee = tournament?.entryFee || 0;
+  const hasEnoughBalance = userBalance >= entryFee;
 
   useEffect(() => {
     if (currentUser) {
@@ -76,6 +80,10 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
     }
     if (!efootballId.trim()) {
       return setError('Please enter your eFootball In-Game ID (e.g. 6595302089).');
+    }
+
+    if (entryFee > 0 && !hasEnoughBalance) {
+      return setError(`Insufficient balance! (অপর্যাপ্ত ব্যালেন্স) You need ৳${entryFee} to join, but have ৳${userBalance}. Please deposit money to your wallet.`);
     }
 
     try {
@@ -187,57 +195,53 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
             </div>
           </div>
 
-          {/* Entry Fee Rule & Payment Notice */}
+          {/* Entry Fee & Wallet Deduction Card */}
           {tournament.entryFee && tournament.entryFee > 0 ? (
-            <div className="rounded-xl bg-amber-950/40 border border-amber-500/50 p-3.5 text-xs text-amber-200 space-y-2 shadow-inner">
-              <div className="flex items-center justify-between font-bold text-amber-300 border-b border-amber-500/30 pb-1.5">
+            <div className={`rounded-xl p-3.5 text-xs space-y-2.5 border ${
+              hasEnoughBalance 
+                ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200' 
+                : 'bg-amber-950/40 border-amber-500/50 text-amber-200'
+            }`}>
+              <div className="flex items-center justify-between font-bold border-b border-white/10 pb-1.5">
                 <span className="flex items-center gap-1.5">
                   <Coins className="w-4 h-4 text-amber-400" />
                   <span>Entry Fee Required: ৳{tournament.entryFee} BDT</span>
                 </span>
-                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] text-amber-300 uppercase">
-                  Verified Slot
+                <span className="font-mono text-white text-[11px]">
+                  Wallet: <strong className={hasEnoughBalance ? 'text-[#00ff87]' : 'text-rose-400 font-bold'}>৳{userBalance}</strong>
                 </span>
               </div>
 
-              {/* Payment Numbers Configured by Admin */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] bg-black/40 p-2.5 rounded-lg border border-amber-500/30">
-                {appSettings.bkashNumber && (
-                  <div>
-                    <span className="text-slate-400 block font-semibold">bKash:</span>
-                    <strong className="text-[#00ff87] font-mono">{appSettings.bkashNumber}</strong>
+              {hasEnoughBalance ? (
+                <div className="flex items-center gap-2 text-emerald-300">
+                  <Check className="w-4 h-4 text-[#00ff87] shrink-0" />
+                  <span className="text-[11px] leading-relaxed">
+                    ✓ আপনার ওয়ালেট ব্যালেন্স পর্যাপ্ত আছে। জয়েন করার সাথে সাথে আপনার ব্যালেন্স থেকে ৳{tournament.entryFee} স্বয়ংক্রিয়ভাবে কেটে নেওয়া হবে।
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-amber-300">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span className="text-[11px] leading-relaxed">
+                      ⚠️ অপর্যাপ্ত ব্যালেন্স! টুর্নামেন্টে জয়েন করতে ৳{tournament.entryFee} প্রয়োজন, কিন্তু আপনার ওয়ালেটে আছে ৳{userBalance}।
+                    </span>
                   </div>
-                )}
-                {appSettings.nagadNumber && (
-                  <div>
-                    <span className="text-slate-400 block font-semibold">Nagad:</span>
-                    <strong className="text-amber-300 font-mono">{appSettings.nagadNumber}</strong>
-                  </div>
-                )}
-                {appSettings.rocketNumber && (
-                  <div>
-                    <span className="text-slate-400 block font-semibold">Rocket:</span>
-                    <strong className="text-sky-300 font-mono">{appSettings.rocketNumber}</strong>
-                  </div>
-                )}
-              </div>
-
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                {appSettings.paymentInstructions || 'Send Money to the admin number above and enter your TrxID below to confirm your slot.'}
-              </p>
-
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-amber-300 mb-1">
-                  TrxID / পেমেন্ট ট্রানজেকশন আইডি বা সেন্ডার নম্বর (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={trxId}
-                  onChange={(e) => setTrxId(e.target.value)}
-                  placeholder="e.g. BL928X4P or Last 4 digits"
-                  className="w-full rounded-lg bg-slate-950 border border-amber-500/50 px-3 py-1.5 text-xs text-white placeholder-slate-500 font-mono focus:border-amber-400 focus:outline-none"
-                />
-              </div>
+                  {onOpenDeposit && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenDeposit();
+                      }}
+                      className="w-full py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-bold hover:brightness-110 transition flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                    >
+                      <Wallet className="w-3.5 h-3.5" />
+                      <span>Deposit Money / ব্যালেন্সে টাকা যোগ করুন</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="rounded-xl bg-emerald-950/30 border border-emerald-500/30 p-2.5 text-[11px] text-emerald-300 flex items-center gap-2">

@@ -36,8 +36,9 @@ import {
   subscribeToUsers
 } from './services/tournamentService';
 import { onFirebaseAuthStateChanged, logOut } from './services/firebase';
-import { Tournament, MatchFixture, UserProfile, LeaderboardEntry, AppSettings } from './types/tournament';
+import { Tournament, MatchFixture, UserProfile, LeaderboardEntry, AppSettings, WalletTransaction } from './types/tournament';
 import { getAppSettings, subscribeToAppSettings } from './services/settingsService';
+import { subscribeToTransactions } from './services/walletService';
 import { Radio } from 'lucide-react';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
@@ -53,6 +54,8 @@ import { CreateTournamentModal } from './components/CreateTournamentModal';
 import { ScreenshotInspectModal } from './components/ScreenshotInspectModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { TournamentLiveNoticeFeedModal } from './components/TournamentLiveNoticeFeedModal';
+import { UserWalletModal } from './components/UserWalletModal';
+import { AdminUsersModal } from './components/AdminUsersModal';
 
 export default function App() {
   // Navigation
@@ -95,7 +98,20 @@ export default function App() {
     };
   }, []);
 
+  // Transactions state & live Firestore subscription
+  const [allTransactions, setAllTransactions] = useState<WalletTransaction[]>([]);
+  useEffect(() => {
+    const unsubTx = subscribeToTransactions(setAllTransactions);
+    return () => unsubTx();
+  }, []);
+
+  // Pending transactions count for admin notice badge
+  const pendingTransactionsCount = allTransactions.filter(t => t.status === 'pending').length;
+
   // Modals
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [walletInitialTab, setWalletInitialTab] = useState<'deposit' | 'withdraw' | 'history'>('deposit');
+  const [isAdminUsersModalOpen, setIsAdminUsersModalOpen] = useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [selectedFixtureForSubmit, setSelectedFixtureForSubmit] = useState<MatchFixture | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -108,6 +124,14 @@ export default function App() {
     url: '',
     title: ''
   });
+
+  // Sync currentUser with allUsers whenever balance or profile details change
+  useEffect(() => {
+    const freshUser = allUsers.find(u => u.id === currentUser.id);
+    if (freshUser && (freshUser.balance !== currentUser.balance || freshUser.role !== currentUser.role)) {
+      setCurrentUserState(freshUser);
+    }
+  }, [allUsers, currentUser.id, currentUser.balance, currentUser.role]);
 
   // Calculate live leaderboard
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => calculateLeaderboard(selectedTournamentId));
@@ -323,6 +347,12 @@ export default function App() {
         }}
         onOpenProfile={() => setIsProfileModalOpen(true)}
         onOpenNoticeFeed={() => setIsNoticeFeedModalOpen(true)}
+        onOpenWallet={() => {
+          setWalletInitialTab('deposit');
+          setIsWalletModalOpen(true);
+        }}
+        onOpenAdminUsers={() => setIsAdminUsersModalOpen(true)}
+        pendingTransactionsCount={pendingTransactionsCount}
         pendingReviewsCount={pendingReviewsCount}
         onLogout={handleLogout}
       />
@@ -353,6 +383,10 @@ export default function App() {
             currentUser={currentUser}
             leaderboard={leaderboard}
             fixtures={fixtures}
+            onOpenWallet={() => {
+              setWalletInitialTab('deposit');
+              setIsWalletModalOpen(true);
+            }}
             onJoinTournament={handleJoinTournament}
             onLeaveTournament={handleLeaveTournament}
             onUpdateTournamentBanner={handleUpdateTournamentBanner}
@@ -514,6 +548,25 @@ export default function App() {
         imageUrl={inspectScreenshot.url}
         title={inspectScreenshot.title}
       />
+
+      {/* User Wallet Modal (Balance, Deposit via bKash/Nagad 01621833825, Withdraw, Trx History) */}
+      <UserWalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        currentUser={currentUser}
+        initialTab={walletInitialTab}
+      />
+
+      {/* Admin Users & Transaction Verification Modal (Admin Only) */}
+      {isUserAdmin(currentUser) && (
+        <AdminUsersModal
+          isOpen={isAdminUsersModalOpen}
+          onClose={() => setIsAdminUsersModalOpen(false)}
+          allUsers={allUsers}
+          currentUser={currentUser}
+          onUpdateUser={handleAdminUpdateUser}
+        />
+      )}
 
       {/* Offline Status Detector (PWA requirement) */}
       <OfflineIndicator />
