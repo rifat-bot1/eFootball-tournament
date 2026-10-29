@@ -39,7 +39,7 @@ import { onFirebaseAuthStateChanged, logOut } from './services/firebase';
 import { Tournament, MatchFixture, UserProfile, LeaderboardEntry, AppSettings, WalletTransaction } from './types/tournament';
 import { getAppSettings, subscribeToAppSettings } from './services/settingsService';
 import { subscribeToTransactions } from './services/walletService';
-import { Radio } from 'lucide-react';
+import { Radio, Trophy, Gamepad2, Wallet, User, ShieldCheck } from 'lucide-react';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { FixturesView } from './components/FixturesView';
@@ -56,10 +56,19 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { TournamentLiveNoticeFeedModal } from './components/TournamentLiveNoticeFeedModal';
 import { UserWalletModal } from './components/UserWalletModal';
 import { AdminUsersModal } from './components/AdminUsersModal';
+import { LoadingScreen } from './components/LoadingScreen';
 
 export default function App() {
-  // Navigation
   const [activeTab, setActiveTab] = useState<'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'history' | 'rules' | 'admin'>('dashboard');
+  const [isLoadingApp, setIsLoadingApp] = useState(true);
+
+  // Splash / Loading screen timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingApp(false);
+    }, 1400);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Core Data States
   const [currentUser, setCurrentUserState] = useState<UserProfile>(getCurrentUser());
@@ -577,6 +586,76 @@ export default function App() {
 
       {/* Offline Status Detector (PWA requirement) */}
       <OfflineIndicator />
+
+      {/* Mobile Fixed Bottom Navigation Bar (Matching Attachments 5 & 6) */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#070b14]/95 backdrop-blur-xl border-t border-slate-800/80 px-2 py-1.5 flex items-center justify-around safe-bottom-padding shadow-2xl">
+        {/* 1. Tournaments / Home */}
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'dashboard'
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-slate-200 font-medium'
+          }`}
+        >
+          <Trophy className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">Tournaments</span>
+        </button>
+
+        {/* 2. My Matches / Fixtures */}
+        <button
+          onClick={() => setActiveTab('fixtures')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
+            activeTab === 'fixtures'
+              ? 'text-cyan-400 font-black'
+              : 'text-slate-400 hover:text-slate-200 font-medium'
+          }`}
+        >
+          <Gamepad2 className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">My Matches</span>
+        </button>
+
+        {/* 3. Wallet */}
+        <button
+          onClick={() => {
+            setWalletInitialTab('deposit');
+            setIsWalletModalOpen(true);
+          }}
+          className="flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl text-emerald-400 hover:text-emerald-300 transition"
+        >
+          <Wallet className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight font-black">৳{currentUser.balance || 0}</span>
+        </button>
+
+        {/* 4. Profile */}
+        <button
+          onClick={() => setIsProfileModalOpen(true)}
+          className="flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl text-slate-400 hover:text-white transition"
+        >
+          <User className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">Profile</span>
+        </button>
+
+        {/* 5. Admin (Admin only) */}
+        {isUserAdmin(currentUser) && (
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition ${
+              activeTab === 'admin'
+                ? 'text-amber-400 font-black'
+                : 'text-amber-500/70 hover:text-amber-400 font-medium'
+            }`}
+          >
+            <ShieldCheck className="w-5 h-5" />
+            <span className="text-[10px] tracking-tight">Admin</span>
+          </button>
+        )}
+      </nav>
+
+      {/* Screen 1: Official DREAM SQUAD BD Loading / Splash Screen */}
+      {isLoadingApp && (
+        <LoadingScreen onDismiss={() => setIsLoadingApp(false)} />
+      )}
 
     </div>
   );

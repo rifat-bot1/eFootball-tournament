@@ -119,15 +119,17 @@ export function subscribeToAnnouncements(
           saveCachedAnnouncements(list);
           callback(list);
         } else {
-          // Fallback to local default starter notices
-          callback(getCachedAnnouncements());
-          if (auth.currentUser && auth.currentUser.email === 'rfrifatbs@gmail.com') {
-            seedInitialAnnouncementsToFirestore().catch(() => {});
-          }
+          // If Firestore collection is empty, seed initial starter announcements
+          seedInitialAnnouncementsToFirestore().then(() => {
+            callback(INITIAL_ANNOUNCEMENTS);
+            saveCachedAnnouncements(INITIAL_ANNOUNCEMENTS);
+          }).catch(() => {
+            callback(getCachedAnnouncements());
+          });
         }
       },
-      (_error) => {
-        // Fallback to cached notices on network interruptions
+      (error) => {
+        console.warn('Firestore announcements listener warning:', error);
         callback(getCachedAnnouncements());
       }
     );
@@ -144,10 +146,25 @@ export function subscribeToAnnouncements(
 async function seedInitialAnnouncementsToFirestore(): Promise<void> {
   try {
     for (const ann of INITIAL_ANNOUNCEMENTS) {
+      const cleanAnn: Record<string, any> = {
+        id: ann.id,
+        title: ann.title,
+        message: ann.message,
+        type: ann.type,
+        priority: ann.priority,
+        active: ann.active,
+        authorName: ann.authorName || 'Mohammad Rifat',
+        createdBy: ann.createdBy || '',
+        createdAt: ann.createdAt,
+        actionUrl: ann.actionUrl || '',
+        actionLabel: ann.actionLabel || ''
+      };
       const docRef = doc(db, COLLECTION_NAME, ann.id);
-      await setDoc(docRef, ann, { merge: true });
+      await setDoc(docRef, cleanAnn, { merge: true });
     }
-  } catch {}
+  } catch (err) {
+    console.warn('Could not seed initial announcements:', err);
+  }
 }
 
 /**
@@ -165,29 +182,33 @@ export async function createAnnouncement(data: {
   postToTelegram?: boolean;
 }): Promise<TournamentAnnouncement> {
   const id = `ann_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const newAnnouncement: TournamentAnnouncement = {
+  
+  // Clean object without ANY undefined properties for Firestore compatibility
+  const cleanAnnouncement: TournamentAnnouncement = {
     id,
     title: data.title.trim(),
     message: data.message.trim(),
     type: data.type,
     priority: data.priority || (data.type === 'urgent' ? 'high' : 'medium'),
     active: true,
-    createdBy: data.createdBy,
-    authorName: data.authorName || 'Mohammad Rifat (Tournament Organizer)',
+    createdBy: data.createdBy || '',
+    authorName: data.authorName || 'Mohammad Rifat (Admin)',
     createdAt: new Date().toISOString(),
-    actionUrl: data.actionUrl?.trim(),
-    actionLabel: data.actionLabel?.trim()
+    actionUrl: data.actionUrl?.trim() || '',
+    actionLabel: data.actionLabel?.trim() || ''
   };
 
-  // 1. Save to cloud storage if authorized
+  // 1. Save directly to cloud Firestore so all users and admins receive it instantly
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
-    await setDoc(docRef, newAnnouncement);
-  } catch {}
+    await setDoc(docRef, cleanAnnouncement);
+  } catch (err) {
+    console.error('Error writing announcement to Firestore:', err);
+  }
 
   // 2. Update local cache
   const cached = getCachedAnnouncements();
-  const updated = [newAnnouncement, ...cached.filter(a => a.id !== id)];
+  const updated = [cleanAnnouncement, ...cached.filter(a => a.id !== id)];
   saveCachedAnnouncements(updated);
 
   // 3. Optional Telegram Broadcast
@@ -197,9 +218,9 @@ export async function createAnnouncement(data: {
       const telegramText = 
         `<b>${typeBadge}</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━━\n` +
-        `📌 <b>${newAnnouncement.title}</b>\n\n` +
-        `${newAnnouncement.message}\n\n` +
-        `✍️ <i>Author: ${newAnnouncement.authorName}</i>\n` +
+        `📌 <b>${cleanAnnouncement.title}</b>\n\n` +
+        `${cleanAnnouncement.message}\n\n` +
+        `✍️ <i>Author: ${cleanAnnouncement.authorName}</i>\n` +
         `⏰ <i>${new Date().toLocaleString()}</i>\n` +
         `━━━━━━━━━━━━━━━━━━━━━\n` +
         `⚡ Check live tournament updates on eFootball Arena Web App!`;
@@ -213,7 +234,7 @@ export async function createAnnouncement(data: {
     }
   }
 
-  return newAnnouncement;
+  return cleanAnnouncement;
 }
 
 /**
@@ -223,7 +244,9 @@ export async function deleteAnnouncement(id: string): Promise<void> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
-  } catch {}
+  } catch (err) {
+    console.error('Error deleting announcement from Firestore:', err);
+  }
 
   const cached = getCachedAnnouncements();
   saveCachedAnnouncements(cached.filter(a => a.id !== id));
@@ -236,7 +259,9 @@ export async function toggleAnnouncementActive(id: string, active: boolean): Pro
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, { active });
-  } catch {}
+  } catch (err) {
+    console.error('Error updating announcement active state in Firestore:', err);
+  }
 
   const cached = getCachedAnnouncements();
   const updated = cached.map(a => a.id === id ? { ...a, active } : a);

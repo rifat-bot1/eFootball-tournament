@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types/tournament';
 import { PWAInstallButton } from './PWAInstallButton';
-import { handleAvatarError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
+import { handleAvatarError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR, APP_LOGO } from '../utils/imageUtils';
 import { isUserAdmin } from '../services/mockData';
 import { subscribeToAnnouncements } from '../services/announcementService';
 import { getAppSettings, subscribeToAppSettings } from '../services/settingsService';
@@ -156,25 +156,30 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => setActiveTab('dashboard')}
           className="flex cursor-pointer items-center gap-2.5 group"
         >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#00ff87] via-[#00c853] to-[#00e5ff] p-[1.5px] shadow-lg shadow-[#00ff87]/20 group-hover:scale-105 transition-transform">
-            <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-950">
-              <Gamepad2 className="h-5 w-5 text-[#00ff87]" />
-            </div>
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+          <div className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-sky-400 p-[2px] shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform overflow-hidden">
+            <img 
+              src={APP_LOGO} 
+              alt="eCup Bangladesh Logo" 
+              className="h-full w-full rounded-full object-cover bg-slate-950"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/icon.svg';
+              }}
+            />
+            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ff87] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00ff87]"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00ff87]"></span>
             </span>
           </div>
 
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-black tracking-wider text-white">eFootball</span>
-              <span className="rounded bg-gradient-to-r from-[#00ff87] to-[#00e5ff] px-1.5 py-0.2 text-[10px] font-black uppercase text-slate-950">
-                Arena
+              <span className="text-sm sm:text-base font-black tracking-wide text-white">eCup Bangladesh</span>
+              <span className="rounded bg-gradient-to-r from-amber-400 to-amber-500 px-1.5 py-0.2 text-[9px] font-black uppercase text-slate-950">
+                PRO
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-mono tracking-tight hidden sm:block">
-              {currentTabLabel} • BD Tournament PWA
+              {currentTabLabel} • BD eFootball Arena
             </p>
           </div>
         </div>

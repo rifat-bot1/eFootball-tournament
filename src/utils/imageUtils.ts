@@ -6,6 +6,8 @@
 export const DEFAULT_ADMIN_AVATAR = './images/avatar-admin.svg';
 export const DEFAULT_PLAYER_AVATAR = './images/avatar-player.svg';
 export const DEFAULT_BANNER = './images/banner-stadium.svg';
+export const APP_LOGO = '/assets/aistudio/IMG_20261029_230800_676_afdc1dca.jpg';
+
 
 export interface AvatarPreset {
   id: string;

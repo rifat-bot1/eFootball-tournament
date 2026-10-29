@@ -103,9 +103,8 @@ service cloud.firestore {
 
     // Announcements Collection (Real-time urgent notice feed)
     match /announcements/{announcementId} {
-      allow get, list: if true;
-      allow create, update: if isValidId(announcementId) && isValidAnnouncement(incoming());
-      allow delete: if isValidId(announcementId);
+      allow get, list, read: if true;
+      allow create, update, delete, write: if true;
     }
 
     // App Settings Collection
