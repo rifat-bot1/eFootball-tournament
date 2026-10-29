@@ -15,7 +15,11 @@ import {
   ExternalLink,
   ChevronRight,
   Flame,
-  Award
+  Award,
+  Coins,
+  Wallet,
+  Banknote,
+  ShieldAlert
 } from 'lucide-react';
 
 interface RulesViewProps {
@@ -27,7 +31,7 @@ export const RulesView: React.FC<RulesViewProps> = ({
   onNavigateToSubmit,
   onNavigateToFixtures
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'setup' | 'fairplay' | 'screenshot' | 'points'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'setup' | 'fairplay' | 'screenshot' | 'points' | 'entryfee'>('all');
 
   return (
     <div className="space-y-6">
@@ -124,6 +128,17 @@ export const RulesView: React.FC<RulesViewProps> = ({
             }`}
           >
             Points &amp; Leaderboard
+          </button>
+          <button
+            onClick={() => setActiveCategory('entryfee')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+              activeCategory === 'entryfee'
+                ? 'bg-[#00ff87] text-slate-950 shadow-md shadow-[#00ff87]/20'
+                : 'bg-slate-950/70 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-400" />
+            <span>Entry Fee &amp; Prize Rules</span>
           </button>
         </div>
       </div>
@@ -328,6 +343,159 @@ export const RulesView: React.FC<RulesViewProps> = ({
                 <li><strong>Total Wins</strong> count.</li>
               </ol>
             </div>
+          </div>
+        )}
+
+        {/* Section 5: Entry Fee & Prize Pool Policy (Crucial New Section) */}
+        {(activeCategory === 'all' || activeCategory === 'entryfee') && (
+          <div className="col-span-1 md:col-span-2 rounded-3xl border border-emerald-500/40 bg-gradient-to-br from-slate-900 via-[#07131e] to-slate-900 p-5 sm:p-7 space-y-5 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Header & Badges */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-[#00ff87] border border-emerald-500/40 shadow-lg shadow-emerald-500/10">
+                  <Coins className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-white">
+                      5. Entry Fee &amp; Prize Pool Policy (এন্ট্রি ফি ও প্রাইজপুল নীতিমালা)
+                    </h3>
+                    <span className="rounded-lg bg-emerald-500/20 text-[#00ff87] text-[10px] px-2 py-0.5 uppercase font-black border border-emerald-500/40">
+                      Official Policy
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Transparent guidelines for tournament fees, payment verification, refunds &amp; prize disbursement
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-[11px] font-bold text-amber-300">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                  <span>100% Guaranteed Prizes</span>
+                </span>
+              </div>
+            </div>
+
+            {/* 3 Pillar Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-2xl bg-slate-950/70 border border-slate-800 p-3.5 space-y-1">
+                <div className="flex items-center gap-2 text-[#00ff87]">
+                  <Wallet className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Fee Structure</span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  <strong>Free (৳০) or Paid (৳২০-৳১০০+)</strong> per tournament. Free tournaments require zero payment.
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-slate-950/70 border border-slate-800 p-3.5 space-y-1">
+                <div className="flex items-center gap-2 text-sky-400">
+                  <Banknote className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Payment Methods</span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  Send Money via <strong>bKash / Nagad / Rocket</strong> with TrxID verification to official admin.
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-slate-950/70 border border-slate-800 p-3.5 space-y-1">
+                <div className="flex items-center gap-2 text-amber-400">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Prize Payout</span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  Sent directly via <strong>bKash/Nagad or Coins within 24 hours</strong> of final match result approval.
+                </p>
+              </div>
+            </div>
+
+            {/* Detailed Rules List */}
+            <ul className="space-y-3 text-xs text-slate-300">
+              <li className="flex items-start gap-3 bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/90">
+                <CheckCircle2 className="w-4 h-4 text-[#00ff87] flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white block font-semibold text-xs sm:text-sm">
+                    Rule 5.1 — Registration &amp; Slot Confirmation:
+                  </strong>
+                  <p className="mt-1 leading-relaxed text-slate-300">
+                    Signing up reserves a provisional slot. For paid tournaments, slots are <strong>officially confirmed only after entry fee verification</strong> with transaction details (TrxID &amp; Sender Number). Unpaid slots are forfeited <strong>2 hours before fixtures generation</strong> to allow waitlisted contenders.
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/90">
+                <CheckCircle2 className="w-4 h-4 text-[#00ff87] flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white block font-semibold text-xs sm:text-sm">
+                    Rule 5.2 — Official Payment Verification (bKash / Nagad / Rocket):
+                  </strong>
+                  <p className="mt-1 leading-relaxed text-slate-300">
+                    Always use personal <strong>Send Money</strong> to the official administrator numbers announced via the app or verified Telegram (<strong>@eFootballTournamentBD</strong>). Provide your eFootball Gamer Name, Registered Email, and Transaction ID for instant activation.
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 bg-slate-950/70 p-3.5 rounded-2xl border border-amber-500/30 bg-amber-950/15">
+                <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-amber-300 block font-semibold text-xs sm:text-sm">
+                    Rule 5.3 — Refund &amp; Cancellation Policy (রিফান্ড সংক্রান্ত নীতি):
+                  </strong>
+                  <div className="mt-1.5 space-y-1.5 text-slate-300">
+                    <p>
+                      • <strong>Tournament Cancellation by Admin:</strong> If a tournament is cancelled or postponed indefinitely, <strong>100% full refund</strong> will be returned to all registered players within 12 hours.
+                    </p>
+                    <p>
+                      • <strong>Pre-Draw Withdrawal:</strong> Players may cancel registration and request a full refund or slot transfer up to <strong>2 hours prior to fixture bracket draw</strong>.
+                    </p>
+                    <p>
+                      • <strong>Non-Refundable After Fixtures:</strong> Once match fixtures are generated and opponents are scheduled, entry fees are <strong>strictly non-refundable</strong> under any circumstances.
+                    </p>
+                  </div>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 bg-slate-950/70 p-3.5 rounded-2xl border border-rose-500/30 bg-rose-950/15">
+                <XCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-rose-300 block font-semibold text-xs sm:text-sm">
+                    Rule 5.4 — No-Show, Forfeits &amp; Disqualification Penalty:
+                  </strong>
+                  <p className="mt-1 leading-relaxed text-slate-300">
+                    If a player fails to join their scheduled match lobby within 15 minutes of the match time, rage-quits, disconnects deliberately, or is disqualified for emulators / lag exploits, their match is recorded as a <strong>3-0 forfeit loss</strong> and their entry fee is <strong>completely forfeited with zero refund</strong>.
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/90">
+                <Trophy className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white block font-semibold text-xs sm:text-sm">
+                    Rule 5.5 — Guaranteed Prize Pool Distribution (প্রাইজ মানি বিতরণ):
+                  </strong>
+                  <p className="mt-1 leading-relaxed text-slate-300">
+                    All declared prize money or eFootball Coins are 100% guaranteed. Winners receive payouts via bKash/Nagad or in-game coin top-up <strong>within 24 hours</strong> of the Grand Final match screenshot approval. Winning proofs are publicly announced in the Telegram channel.
+                  </p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-3 bg-slate-950/70 p-3.5 rounded-2xl border border-sky-500/30 bg-sky-950/20">
+                <ShieldAlert className="w-4 h-4 text-sky-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-sky-300 block font-semibold text-xs sm:text-sm">
+                    Rule 5.6 — Anti-Fraud &amp; Imposter Advisory:
+                  </strong>
+                  <p className="mt-1 leading-relaxed text-slate-300">
+                    Never send money to any unverified personal number or third-party Facebook/WhatsApp contacts. The only authorized communications are through this web application and the official Telegram channel: <strong>@eFootballTournamentBD</strong>.
+                  </p>
+                </div>
+              </li>
+            </ul>
           </div>
         )}
 

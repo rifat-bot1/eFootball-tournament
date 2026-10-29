@@ -265,6 +265,9 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({
                 placeholder="0 (Free)"
                 className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white focus:border-[#00ff87] focus:outline-none"
               />
+              <span className="block text-[10px] text-slate-500 mt-1">
+                Set 0 for Free. For paid entry, Official Rule 5 (Refund &amp; TrxID policy) applies.
+              </span>
             </div>
 
             <div>

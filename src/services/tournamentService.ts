@@ -587,6 +587,13 @@ export function leaveTournament(tournamentId: string, userId: string): Tournamen
 }
 
 /**
+ * Save Users Helper
+ */
+export function saveUsers(users: UserProfile[]): void {
+  localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+}
+
+/**
  * Update Tournament Banner Image
  */
 export function updateTournamentBanner(tournamentId: string, bannerUrl: string): Tournament {
@@ -601,6 +608,113 @@ export function updateTournamentBanner(tournamentId: string, bannerUrl: string):
   saveTournaments(tournaments);
   syncTournamentToFirestore(tournaments[index]).catch(() => {});
   return tournaments[index];
+}
+
+/**
+ * Update Tournament - Allows Admin to customize entryFee, title, description, format, status, maxPlayers, prizePool, rules, startDate, bannerUrl
+ */
+export function updateTournament(tournamentId: string, updates: Partial<Tournament>): Tournament {
+  const tournaments = getTournaments();
+  const index = tournaments.findIndex(t => t.id === tournamentId);
+  if (index === -1) throw new Error('Tournament not found');
+
+  const current = tournaments[index];
+  const updated: Tournament = {
+    ...current,
+    ...updates,
+    entryFee: updates.entryFee !== undefined ? Number(updates.entryFee) : current.entryFee,
+    maxPlayers: updates.maxPlayers !== undefined ? Number(updates.maxPlayers) : current.maxPlayers,
+    rules: {
+      ...current.rules,
+      ...(updates.rules || {})
+    }
+  };
+
+  tournaments[index] = updated;
+  saveTournaments(tournaments);
+  syncTournamentToFirestore(updated).catch(() => {});
+  return updated;
+}
+
+/**
+ * Delete Tournament and associated fixtures
+ */
+export function deleteTournament(tournamentId: string): boolean {
+  const tournaments = getTournaments();
+  const filtered = tournaments.filter(t => t.id !== tournamentId);
+  saveTournaments(filtered);
+
+  const fixtures = getFixtures();
+  const remainingFixtures = fixtures.filter(f => f.tournamentId !== tournamentId);
+  saveFixtures(remainingFixtures);
+  return true;
+}
+
+/**
+ * Admin manual score override / result adjudication
+ */
+export function adminOverrideMatchResult(
+  fixtureId: string, 
+  player1Score: number, 
+  player2Score: number, 
+  winnerId?: string,
+  notes?: string
+): MatchFixture {
+  const fixtures = getFixtures();
+  const index = fixtures.findIndex(f => f.id === fixtureId);
+  if (index === -1) throw new Error('Match fixture not found');
+
+  const fix = fixtures[index];
+  const updatedFixture: MatchFixture = {
+    ...fix,
+    status: 'approved',
+    result: {
+      player1Score: Number(player1Score),
+      player2Score: Number(player2Score),
+      submittedBy: 'admin',
+      submittedByName: 'Tournament Administrator',
+      screenshotUrl: fix.result?.screenshotUrl || './images/match-proof-verified.svg',
+      submittedAt: new Date().toISOString(),
+      notes: notes || 'Score decided by Tournament Administrator',
+      adminVerdict: {
+        approvedBy: 'Administrator (Manual Override)',
+        verifiedAt: new Date().toISOString()
+      }
+    }
+  };
+
+  fixtures[index] = updatedFixture;
+  saveFixtures(fixtures);
+  syncFixtureToFirestore(updatedFixture).catch(() => {});
+  return updatedFixture;
+}
+
+/**
+ * Admin User Management: update user details
+ */
+export function adminUpdateUser(userId: string, updates: Partial<UserProfile>): UserProfile {
+  const users = getUsers();
+  const index = users.findIndex(u => u.id === userId);
+  if (index === -1) throw new Error('User not found');
+
+  const updated: UserProfile = {
+    ...users[index],
+    ...updates
+  };
+  users[index] = updated;
+  saveUsers(users);
+  syncUserToFirestore(updated).catch(() => {});
+  return updated;
+}
+
+/**
+ * Admin User Management: delete user
+ */
+export function adminDeleteUser(userId: string): boolean {
+  const users = getUsers();
+  const filtered = users.filter(u => u.id !== userId);
+  saveUsers(filtered);
+  return true;
 }
 
 /**
@@ -651,15 +765,12 @@ export async function createTournament(data: {
     maxPlayers: Number(data.maxPlayers),
     registeredPlayerIds: [], // Open for players to register
     prizePool: data.prizePool,
+    entryFee: Number(data.entryFee) || 0,
     rules: data.rules,
     startDate: new Date(Date.now() + 86400000 * 2).toISOString(),
     bannerUrl: data.bannerUrl || './images/banner-stadium.svg',
     createdAt: new Date().toISOString()
   };
-
-  if (data.entryFee) {
-    (newTour as any).entryFee = data.entryFee;
-  }
 
   tournaments.unshift(newTour);
   saveTournaments(tournaments);

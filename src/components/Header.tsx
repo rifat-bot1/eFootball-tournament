@@ -29,6 +29,8 @@ import { PWAInstallButton } from './PWAInstallButton';
 import { handleAvatarError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR } from '../utils/imageUtils';
 import { isUserAdmin } from '../services/mockData';
 import { subscribeToAnnouncements } from '../services/announcementService';
+import { getAppSettings, subscribeToAppSettings } from '../services/settingsService';
+import { AppSettings } from '../types/tournament';
 
 interface HeaderProps {
   activeTab: 'dashboard' | 'fixtures' | 'submit' | 'leaderboard' | 'history' | 'rules' | 'admin';
@@ -55,7 +57,14 @@ export const Header: React.FC<HeaderProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeNoticeCount, setActiveNoticeCount] = useState<number>(0);
   const [hasUnreadNotice, setHasUnreadNotice] = useState<boolean>(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>(getAppSettings());
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to live app settings
+  useEffect(() => {
+    const unsub = subscribeToAppSettings(setAppSettings);
+    return () => unsub();
+  }, []);
 
   // Subscribe to real-time announcements to badge the live notice icon
   useEffect(() => {
@@ -202,11 +211,11 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* 1. Telegram Channel Button */}
           <a
-            href="https://t.me/eFootballTournamentBD"
+            href={appSettings.telegramChannelUrl || "https://t.me/eFootballTournamentBD"}
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-950/40 px-2.5 sm:px-3 py-2 text-xs font-bold text-sky-400 hover:bg-sky-500/20 hover:border-sky-400 hover:text-white transition-all shadow-sm"
-            title="Join Official Telegram Channel (@eFootballTournamentBD)"
+            title="Join Official Telegram Channel"
           >
             <Send className="w-3.5 h-3.5 text-sky-400" />
             <span className="hidden sm:inline">Telegram</span>
@@ -424,7 +433,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* Secondary Actions: Telegram + Switch Account + Logout */}
                 <div className="pt-2 space-y-1">
                   <a
-                    href="https://t.me/eFootballTournamentBD"
+                    href={appSettings.telegramChannelUrl || "https://t.me/eFootballTournamentBD"}
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => setIsMenuOpen(false)}

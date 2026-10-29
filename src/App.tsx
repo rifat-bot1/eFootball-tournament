@@ -13,6 +13,8 @@ import {
   joinTournament, 
   leaveTournament,
   updateTournamentBanner,
+  updateTournament,
+  deleteTournament,
   createTournament, 
   generateFixturesForTournament, 
   submitMatchResult, 
@@ -25,10 +27,15 @@ import {
   isUserAdmin,
   concludeTournament,
   updateUserProfile,
-  adminAddPlayerToTournament
+  adminAddPlayerToTournament,
+  adminOverrideMatchResult,
+  adminUpdateUser,
+  adminDeleteUser
 } from './services/tournamentService';
 import { onFirebaseAuthStateChanged, logOut } from './services/firebase';
-import { Tournament, MatchFixture, UserProfile, LeaderboardEntry } from './types/tournament';
+import { Tournament, MatchFixture, UserProfile, LeaderboardEntry, AppSettings } from './types/tournament';
+import { getAppSettings, subscribeToAppSettings } from './services/settingsService';
+import { Radio } from 'lucide-react';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { FixturesView } from './components/FixturesView';
@@ -54,6 +61,13 @@ export default function App() {
   const [tournaments, setTournaments] = useState<Tournament[]>(getTournaments());
   const [fixtures, setFixtures] = useState<MatchFixture[]>(getFixtures());
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>(tournaments[0]?.id || '');
+  const [appSettings, setAppSettings] = useState<AppSettings>(getAppSettings());
+
+  // Subscribe to live app settings
+  useEffect(() => {
+    const unsub = subscribeToAppSettings(setAppSettings);
+    return () => unsub();
+  }, []);
 
   // Modals
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -217,6 +231,41 @@ export default function App() {
     setFixtures(getFixtures());
   };
 
+  const handleUpdateTournament = (tournamentId: string, updates: Partial<Tournament>) => {
+    updateTournament(tournamentId, updates);
+    setTournaments(getTournaments());
+  };
+
+  const handleDeleteTournament = (tournamentId: string) => {
+    deleteTournament(tournamentId);
+    setTournaments(getTournaments());
+    setFixtures(getFixtures());
+  };
+
+  const handleOverrideMatchResult = (
+    fixtureId: string,
+    p1Score: number,
+    p2Score: number,
+    winnerId?: string,
+    notes?: string
+  ) => {
+    adminOverrideMatchResult(fixtureId, p1Score, p2Score, winnerId, notes);
+    setFixtures(getFixtures());
+  };
+
+  const handleAdminUpdateUser = (userId: string, updates: Partial<UserProfile>) => {
+    const updated = adminUpdateUser(userId, updates);
+    setAllUsers(getUsers());
+    if (currentUser.id === userId) {
+      setCurrentUserState(updated);
+    }
+  };
+
+  const handleAdminDeleteUser = (userId: string) => {
+    adminDeleteUser(userId);
+    setAllUsers(getUsers());
+  };
+
   const handleViewScreenshot = (url: string, title: string) => {
     setInspectScreenshot({ open: true, url, title });
   };
@@ -252,6 +301,23 @@ export default function App() {
         onLogout={handleLogout}
       />
 
+      {/* Urgent Live Marquee Ticker (Managed by Admin) */}
+      {appSettings.isUrgentTickerActive && appSettings.urgentTickerText && (
+        <div className="bg-gradient-to-r from-rose-950/90 via-slate-950 to-rose-950/90 border-b border-rose-500/30 px-3 py-1.5 text-xs text-rose-200 shadow-inner">
+          <div className="mx-auto max-w-7xl flex items-center gap-2.5 overflow-hidden">
+            <span className="flex items-center gap-1 rounded bg-rose-500/25 px-2 py-0.5 text-[10px] font-black uppercase text-rose-300 border border-rose-500/40 shrink-0 animate-pulse">
+              <Radio className="w-3 h-3 text-rose-400" />
+              LIVE TICKER
+            </span>
+            <div className="overflow-hidden whitespace-nowrap flex-1">
+              <span className="font-semibold text-rose-100 text-xs tracking-wide">
+                {appSettings.urgentTickerText}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Container */}
       <main className="flex-1 mx-auto w-full max-w-7xl px-3 sm:px-6 py-6 pb-20">
         
@@ -264,6 +330,8 @@ export default function App() {
             onJoinTournament={handleJoinTournament}
             onLeaveTournament={handleLeaveTournament}
             onUpdateTournamentBanner={handleUpdateTournamentBanner}
+            onUpdateTournament={handleUpdateTournament}
+            onDeleteTournament={handleDeleteTournament}
             onNavigateToFixtures={(tourId) => {
               if (tourId) setSelectedTournamentId(tourId);
               setActiveTab('fixtures');
@@ -328,14 +396,20 @@ export default function App() {
             currentUser={currentUser}
             fixtures={fixtures}
             tournaments={tournaments}
+            allUsers={allUsers}
             onApproveResult={handleApproveResult}
             onRejectResult={handleRejectResult}
             onOpenCreateTournament={() => setIsCreateTourModalOpen(true)}
+            onUpdateTournament={handleUpdateTournament}
+            onDeleteTournament={handleDeleteTournament}
             onGenerateFixtures={handleGenerateFixtures}
             onConcludeTournament={handleConcludeTournament}
             onViewScreenshot={handleViewScreenshot}
             onSwitchToAdmin={() => setIsAuthModalOpen(true)}
             onAdminAddPlayer={handleAdminAddPlayer}
+            onOverrideMatchResult={handleOverrideMatchResult}
+            onAdminUpdateUser={handleAdminUpdateUser}
+            onAdminDeleteUser={handleAdminDeleteUser}
           />
         )}
 

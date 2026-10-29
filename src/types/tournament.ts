@@ -38,6 +38,7 @@ export interface Tournament {
   registeredPlayerIds: string[];
   rules: TournamentRules;
   prizePool: string;
+  entryFee?: number; // Entry fee in BDT (0 or undefined = Free)
   startDate: string;
   bannerUrl: string;
   winnerId?: string;
@@ -135,4 +136,27 @@ export interface TournamentAnnouncement {
   actionUrl?: string;
   actionLabel?: string;
   expiresAt?: string;
+}
+
+export interface AppSettings {
+  appName: string;
+  appTagline: string;
+  telegramChannelUrl: string;
+  telegramGroupUrl: string;
+  whatsappNumber: string;
+  supportPhone: string;
+  bkashNumber: string;
+  nagadNumber: string;
+  rocketNumber: string;
+  paymentInstructions: string;
+  urgentTickerText: string;
+  isUrgentTickerActive: boolean;
+  defaultEntryFee: number;
+  defaultMatchLength: string;
+  defaultExtraTime: boolean;
+  defaultPenalties: boolean;
+  defaultCondition: string;
+  screenshotDeadlineMinutes: number;
+  allowPlayerRegistration: boolean;
+  maintenanceMode: boolean;
 }

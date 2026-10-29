@@ -242,3 +242,28 @@ export async function toggleAnnouncementActive(id: string, active: boolean): Pro
   const updated = cached.map(a => a.id === id ? { ...a, active } : a);
   saveCachedAnnouncements(updated);
 }
+
+/**
+ * Update an existing announcement
+ */
+export async function updateAnnouncement(
+  id: string, 
+  data: Partial<TournamentAnnouncement>
+): Promise<TournamentAnnouncement | null> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    await updateDoc(docRef, data);
+  } catch {}
+
+  const cached = getCachedAnnouncements();
+  let updatedItem: TournamentAnnouncement | null = null;
+  const updated = cached.map(a => {
+    if (a.id === id) {
+      updatedItem = { ...a, ...data };
+      return updatedItem;
+    }
+    return a;
+  });
+  saveCachedAnnouncements(updated);
+  return updatedItem;
+}

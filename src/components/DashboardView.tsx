@@ -22,12 +22,16 @@ import {
   Send,
   ExternalLink,
   Image as ImageIcon,
-  History
+  History,
+  Coins,
+  Wallet,
+  Edit3
 } from 'lucide-react';
 import { Tournament, UserProfile, LeaderboardEntry, MatchFixture } from '../types/tournament';
 import confetti from 'canvas-confetti';
 import { JoinTournamentModal } from './JoinTournamentModal';
 import { EditBannerModal } from './EditBannerModal';
+import { EditTournamentModal } from './EditTournamentModal';
 import { UpcomingMatchCountdown } from './UpcomingMatchCountdown';
 import { handleAvatarError, handleBannerError, DEFAULT_ADMIN_AVATAR, DEFAULT_PLAYER_AVATAR, DEFAULT_BANNER } from '../utils/imageUtils';
 import { isUserAdmin } from '../services/mockData';
@@ -51,6 +55,8 @@ interface DashboardViewProps {
   ) => Promise<any>;
   onLeaveTournament?: (tournamentId: string) => void;
   onUpdateTournamentBanner?: (tournamentId: string, bannerUrl: string) => void;
+  onUpdateTournament?: (tournamentId: string, updates: Partial<Tournament>) => void;
+  onDeleteTournament?: (tournamentId: string) => void;
   onNavigateToFixtures: (tournamentId?: string) => void;
   onNavigateToSubmit: (fixture?: MatchFixture) => void;
   onOpenCreateModal: () => void;
@@ -69,6 +75,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onJoinTournament,
   onLeaveTournament,
   onUpdateTournamentBanner,
+  onUpdateTournament,
+  onDeleteTournament,
   onNavigateToFixtures,
   onNavigateToSubmit,
   onOpenCreateModal,
@@ -82,6 +90,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [joinedAlert, setJoinedAlert] = useState<string | null>(null);
   const [joiningTournament, setJoiningTournament] = useState<Tournament | null>(null);
   const [editingBannerTour, setEditingBannerTour] = useState<Tournament | null>(null);
+  const [editingTour, setEditingTour] = useState<Tournament | null>(null);
 
   // Find user's leaderboard position
   const userRankIndex = leaderboard.findIndex(e => e.playerId === currentUser.id);
@@ -418,6 +427,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span className="rounded-md bg-black/70 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-slate-300 uppercase">
                         {tour.format}
                       </span>
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                        tour.entryFee 
+                          ? 'bg-amber-400 text-slate-950 shadow-sm' 
+                          : 'bg-emerald-500/20 text-[#00ff87] border border-emerald-500/40'
+                      }`}>
+                        {tour.entryFee ? `৳${tour.entryFee} Fee` : 'Free'}
+                      </span>
                     </div>
 
                     {/* Registered count pill */}
@@ -426,20 +442,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span>{tour.registeredPlayerIds.length}/{tour.maxPlayers}</span>
                     </div>
 
-                    {/* Admin Quick Action: Change Banner */}
+                    {/* Admin Quick Actions: Change Banner & Customize Tournament */}
                     {isUserAdmin(currentUser) && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingBannerTour(tour);
-                        }}
-                        className="absolute bottom-3 right-3 rounded-lg bg-black/80 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:text-white hover:bg-slate-900 border border-slate-700/80 flex items-center gap-1.5 shadow-lg transition"
-                        title="Change tournament banner image"
-                      >
-                        <ImageIcon className="w-3.5 h-3.5 text-[#00ff87]" />
-                        <span>Change Banner</span>
-                      </button>
+                      <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingTour(tour);
+                          }}
+                          className="rounded-lg bg-amber-500/90 backdrop-blur-md px-2.5 py-1 text-[11px] font-black text-slate-950 hover:bg-amber-400 border border-amber-300 flex items-center gap-1 shadow-lg transition"
+                          title="Customize entry fee and tournament details"
+                        >
+                          <Coins className="w-3.5 h-3.5" />
+                          <span>Customize Fee</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingBannerTour(tour);
+                          }}
+                          className="rounded-lg bg-black/80 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:text-white hover:bg-slate-900 border border-slate-700/80 flex items-center gap-1.5 shadow-lg transition"
+                          title="Change tournament banner image"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-[#00ff87]" />
+                          <span>Banner</span>
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -468,6 +499,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </span>
                         <span>
                           ET: {tour.rules.extraTime ? 'ON' : 'OFF'} • PK: {tour.rules.penalties ? 'ON' : 'OFF'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-500 flex items-center gap-1">
+                          <Coins className="w-3 h-3 text-emerald-400" /> Entry Fee:
+                        </span>
+                        <span className={`font-bold ${tour.entryFee ? 'text-amber-300' : 'text-[#00ff87]'}`}>
+                          {tour.entryFee ? `৳${tour.entryFee} BDT` : 'Free (৳০)'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-slate-300">
@@ -532,16 +571,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Edit Tournament Banner Modal (Admin Only) */}
       {isUserAdmin(currentUser) && (
-        <EditBannerModal
-          isOpen={Boolean(editingBannerTour)}
-          onClose={() => setEditingBannerTour(null)}
-          tournament={editingBannerTour}
-          onUpdateBanner={(tourId, newBanner) => {
-            onUpdateTournamentBanner?.(tourId, newBanner);
-            setJoinedAlert('Tournament banner updated successfully!');
-            setTimeout(() => setJoinedAlert(null), 3000);
-          }}
-        />
+        <>
+          <EditBannerModal
+            isOpen={Boolean(editingBannerTour)}
+            onClose={() => setEditingBannerTour(null)}
+            tournament={editingBannerTour}
+            onUpdateBanner={(tourId, newBanner) => {
+              onUpdateTournamentBanner?.(tourId, newBanner);
+              setJoinedAlert('Tournament banner updated successfully!');
+              setTimeout(() => setJoinedAlert(null), 3000);
+            }}
+          />
+
+          <EditTournamentModal
+            isOpen={Boolean(editingTour)}
+            onClose={() => setEditingTour(null)}
+            tournament={editingTour}
+            onUpdateTournament={(tourId, updates) => {
+              onUpdateTournament?.(tourId, updates);
+              setJoinedAlert('Tournament details and entry fee updated!');
+              setTimeout(() => setJoinedAlert(null), 3000);
+            }}
+            onDeleteTournament={onDeleteTournament}
+          />
+        </>
       )}
 
     </div>

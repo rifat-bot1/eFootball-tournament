@@ -11,9 +11,13 @@ import {
   ShieldCheck, 
   AlertCircle,
   Copy,
-  Sparkles
+  Sparkles,
+  Coins,
+  Wallet,
+  Info
 } from 'lucide-react';
 import { Tournament, UserProfile } from '../types/tournament';
+import { getAppSettings } from '../services/settingsService';
 
 interface JoinTournamentModalProps {
   isOpen: boolean;
@@ -48,8 +52,10 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
   );
   const [favoriteClub, setFavoriteClub] = useState(currentUser.favoriteClub || 'FC Barcelona');
   const [division, setDivision] = useState(currentUser.division || 'Division 1');
+  const [trxId, setTrxId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const appSettings = getAppSettings();
 
   useEffect(() => {
     if (currentUser) {
@@ -156,24 +162,89 @@ export const JoinTournamentModal: React.FC<JoinTournamentModalProps> = ({
           )}
 
           {/* Tournament Overview Pill */}
-          <div className="grid grid-cols-3 gap-2 rounded-xl bg-slate-950/70 p-2.5 border border-slate-800 text-center text-[11px]">
+          <div className="grid grid-cols-4 gap-2 rounded-xl bg-slate-950/70 p-2.5 border border-slate-800 text-center text-[11px]">
             <div>
               <span className="text-slate-500 block">Slots</span>
               <strong className="text-white">
                 {tournament.registeredPlayerIds.length}/{tournament.maxPlayers}
               </strong>
             </div>
-            <div className="border-x border-slate-800">
+            <div className="border-l border-slate-800">
+              <span className="text-slate-500 block">Entry Fee</span>
+              <strong className={tournament.entryFee ? "text-amber-300 font-bold" : "text-[#00ff87] font-bold"}>
+                {tournament.entryFee ? `৳${tournament.entryFee}` : 'FREE'}
+              </strong>
+            </div>
+            <div className="border-l border-slate-800">
               <span className="text-slate-500 block">Reward</span>
               <strong className="text-amber-400 truncate block px-1">
                 {tournament.prizePool || 'Coins'}
               </strong>
             </div>
-            <div>
+            <div className="border-l border-slate-800">
               <span className="text-slate-500 block">Match Time</span>
               <strong className="text-[#00ff87]">{tournament.rules.matchLength}</strong>
             </div>
           </div>
+
+          {/* Entry Fee Rule & Payment Notice */}
+          {tournament.entryFee && tournament.entryFee > 0 ? (
+            <div className="rounded-xl bg-amber-950/40 border border-amber-500/50 p-3.5 text-xs text-amber-200 space-y-2 shadow-inner">
+              <div className="flex items-center justify-between font-bold text-amber-300 border-b border-amber-500/30 pb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Coins className="w-4 h-4 text-amber-400" />
+                  <span>Entry Fee Required: ৳{tournament.entryFee} BDT</span>
+                </span>
+                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] text-amber-300 uppercase">
+                  Verified Slot
+                </span>
+              </div>
+
+              {/* Payment Numbers Configured by Admin */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] bg-black/40 p-2.5 rounded-lg border border-amber-500/30">
+                {appSettings.bkashNumber && (
+                  <div>
+                    <span className="text-slate-400 block font-semibold">bKash:</span>
+                    <strong className="text-[#00ff87] font-mono">{appSettings.bkashNumber}</strong>
+                  </div>
+                )}
+                {appSettings.nagadNumber && (
+                  <div>
+                    <span className="text-slate-400 block font-semibold">Nagad:</span>
+                    <strong className="text-amber-300 font-mono">{appSettings.nagadNumber}</strong>
+                  </div>
+                )}
+                {appSettings.rocketNumber && (
+                  <div>
+                    <span className="text-slate-400 block font-semibold">Rocket:</span>
+                    <strong className="text-sky-300 font-mono">{appSettings.rocketNumber}</strong>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                {appSettings.paymentInstructions || 'Send Money to the admin number above and enter your TrxID below to confirm your slot.'}
+              </p>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-amber-300 mb-1">
+                  TrxID / পেমেন্ট ট্রানজেকশন আইডি বা সেন্ডার নম্বর (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={trxId}
+                  onChange={(e) => setTrxId(e.target.value)}
+                  placeholder="e.g. BL928X4P or Last 4 digits"
+                  className="w-full rounded-lg bg-slate-950 border border-amber-500/50 px-3 py-1.5 text-xs text-white placeholder-slate-500 font-mono focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-emerald-950/30 border border-emerald-500/30 p-2.5 text-[11px] text-emerald-300 flex items-center gap-2">
+              <Check className="w-4 h-4 text-[#00ff87] shrink-0" />
+              <span><strong>Free Entry Tournament:</strong> ৳০ Entry Fee. Open for all registered community contenders!</span>
+            </div>
+          )}
 
           {/* Player Name */}
           <div>
